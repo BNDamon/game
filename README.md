@@ -201,6 +201,32 @@ on the latest pull if they still look that way).
 > change worth doing deliberately rather than guessing into, so flagging it
 > now rather than jumping straight there.
 
+### Round 4: the board tilt was wrong, a real layout bug, and actual time-based difficulty
+
+Feedback: the tilt was too much and not what "movement" meant — turns out
+rotating a strict square grid just makes the grid lines look skewed/broken,
+not alive, so it's removed entirely rather than toned down. There was also
+a real layout bug making the best badge (and a chunk of blank space next
+to it) render much taller than intended. And the actual ask behind "make
+it move" was a time-based difficulty idea — offered two concrete options
+(rising garbage rows, which touches the board directly and is the bigger
+swing; or a shrinking combo window, lower-risk and purely score-side) and
+the shrinking window was picked.
+
+- **Board tilt/sway removed.** Wrong effect for a precision grid.
+- **Fixed the best-badge/hero-score layout bug**: both were relying on the
+  parent row's `childForceExpandHeight` to size them correctly, and it
+  wasn't taking — they now set `preferredHeight` explicitly instead of
+  depending on that inheritance.
+- **Shrinking combo window** (`ComboTracker`, Core): the 4-second combo
+  window isn't fixed anymore — it eases down to 2 seconds over the first
+  4 minutes of a run (tracked by actual elapsed play time, not score), so
+  chaining quickly gets progressively harder the longer a session goes.
+  This is the real "increases difficulty by time" mechanic; it's
+  intentionally invisible/unannounced right now (no on-screen timer) so
+  it's felt rather than watched — happy to add a visible indicator if you
+  want the pressure to be more explicit once you've played with it.
+
 ## What's next
 
 1. Save a `Scenes/Main.unity` scene once the one-GameObject setup above is

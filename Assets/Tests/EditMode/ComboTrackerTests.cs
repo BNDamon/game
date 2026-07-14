@@ -38,7 +38,7 @@ namespace BlockMerge.Core.Tests
             var combo = new ComboTracker();
             combo.RegisterClear();
 
-            combo.Tick(ComboTracker.ComboWindowSeconds + 0.1f);
+            combo.Tick(ComboTracker.ComboWindowMax + 0.1f);
 
             Assert.AreEqual(0, combo.ComboCount);
         }
@@ -48,7 +48,7 @@ namespace BlockMerge.Core.Tests
         {
             var combo = new ComboTracker();
             combo.RegisterClear();
-            combo.Tick(ComboTracker.ComboWindowSeconds + 0.1f);
+            combo.Tick(ComboTracker.ComboWindowMax + 0.1f);
 
             int count = combo.RegisterClear();
 
@@ -80,6 +80,46 @@ namespace BlockMerge.Core.Tests
 
             Assert.AreEqual(0, combo.ComboCount);
             Assert.AreEqual(1f, combo.CurrentMultiplier);
+        }
+
+        [Test]
+        public void CurrentWindowSeconds_StartsAtMax()
+        {
+            var combo = new ComboTracker();
+
+            Assert.AreEqual(ComboTracker.ComboWindowMax, combo.CurrentWindowSeconds);
+        }
+
+        [Test]
+        public void CurrentWindowSeconds_ShrinksTowardMinAsPlayTimeElapses()
+        {
+            var combo = new ComboTracker();
+
+            combo.Tick(ComboTracker.ShrinkDurationSeconds / 2f);
+
+            Assert.Less(combo.CurrentWindowSeconds, ComboTracker.ComboWindowMax);
+            Assert.Greater(combo.CurrentWindowSeconds, ComboTracker.ComboWindowMin);
+        }
+
+        [Test]
+        public void CurrentWindowSeconds_NeverShrinksPastMin()
+        {
+            var combo = new ComboTracker();
+
+            combo.Tick(ComboTracker.ShrinkDurationSeconds * 10f);
+
+            Assert.AreEqual(ComboTracker.ComboWindowMin, combo.CurrentWindowSeconds);
+        }
+
+        [Test]
+        public void Reset_RestoresWindowToMax()
+        {
+            var combo = new ComboTracker();
+            combo.Tick(ComboTracker.ShrinkDurationSeconds);
+
+            combo.Reset();
+
+            Assert.AreEqual(ComboTracker.ComboWindowMax, combo.CurrentWindowSeconds);
         }
     }
 }

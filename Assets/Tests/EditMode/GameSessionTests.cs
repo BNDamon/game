@@ -131,7 +131,7 @@ namespace BlockMerge.Core.Tests
             session.Tray[0] = SingleCell(BlockColor.Cyan);
             session.PlacePiece(0, new GridCoord(0, 3)); // first clear, combo 1
 
-            session.Tick(ComboTracker.ComboWindowSeconds + 0.5f); // let the combo window lapse
+            session.Tick(ComboTracker.ComboWindowMax + 0.5f); // let the combo window lapse
 
             session.Tray[1] = SingleCell(BlockColor.Red);
             session.PlacePiece(1, new GridCoord(1, 0));
