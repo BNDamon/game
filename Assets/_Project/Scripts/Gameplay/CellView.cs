@@ -28,7 +28,6 @@ namespace BlockMerge.Gameplay
         public static CellView Create(Transform parent, int row, int col)
         {
             var image = UiFactory.CreateRoundedPanel($"Cell_{row}_{col}", parent, EmptyColor);
-            UiFactory.AddRoundedHighlight(image.transform);
 
             var cell = image.gameObject.AddComponent<CellView>();
             cell._image = image;

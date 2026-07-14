@@ -117,12 +117,19 @@ Since the last playtest round, this pass adds:
   screen fades/scales in instead of just appearing — the actual complaint
   that prompted this ("it doesn't tell you, it just ends") should be fixed
   either way, whichever path was actually causing it.
-- **Visual identity**: rounded, glossy blocks (a generated rounded-rect
-  texture + soft top-highlight, not flat squares); the charge meter as a
-  glowing "power core" that breathes brighter as it fills and flashes when
-  full; a small burst of "particles" where blocks merge; the background
+- **Fixed a real bug**: a "used" tray slot's color was nearly transparent
+  against the dark background, so 2 of the 3 tray slots were effectively
+  invisible most of the time — it's opaque now.
+- **Visual identity**: rounded blocks with a subtle brightness gradient
+  baked into the shared rounded-rect texture (an earlier version of this
+  used a separate glossy top-highlight overlay — it read as a dated
+  skeuomorphic bevel and was cut); the charge meter as a glowing "power
+  core" that breathes brighter as it fills and flashes when full; a small
+  burst of "particles" where blocks merge; a floating "+N" where a scoring
+  line/merge lands, not just a number ticking up in the HUD; the background
   subtly warming from its base dark-blue toward an ember tone as the meter
-  builds, so the whole screen's mood tracks the mechanic.
+  builds. The HUD's score/best chips are also much smaller now — the first
+  pass made them dominate the top of the screen, which is fixed.
 - **Feel**: placed cells pop in, cleared cells pop-and-fade, merged cells
   glow brighter and longer before converting to charge, the meter bar eases
   toward its new value instead of snapping, and the score counts up instead

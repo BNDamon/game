@@ -10,7 +10,7 @@ namespace BlockMerge.Gameplay
     public sealed class PieceTraySlotView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private static readonly Color Idle = new Color32(0x1e, 0x21, 0x29, 0xff);
-        private static readonly Color Used = new Color32(0x1e, 0x21, 0x29, 0x50);
+        private static readonly Color Used = new Color32(0x22, 0x25, 0x2d, 0xff);
         private static readonly Color InvalidFlash = new Color32(0xff, 0x55, 0x55, 0xff);
 
         private const float SlotSize = 220f;
@@ -97,7 +97,6 @@ namespace BlockMerge.Gameplay
                 image.sprite = UiFactory.RoundedSprite;
                 image.type = Image.Type.Sliced;
                 image.color = color;
-                UiFactory.AddRoundedHighlight(image.transform);
             }
         }
 

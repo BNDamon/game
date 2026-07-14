@@ -164,9 +164,33 @@ namespace BlockMerge.Gameplay
 
                 _sfx.Play(SfxPlayer.SfxKind.Clear);
                 if (outcome.LineClear.MergedGroups.Count > 0) _sfx.Play(SfxPlayer.SfxKind.Merge);
+
+                PlayScorePopup(outcome.LineClear.ClearedCells, outcome.LineClear.LineBonus + outcome.LineClear.MergeBonus);
             }
 
             RefreshNonGridUi(outcome.GameOver);
+        }
+
+        private void PlayScorePopup(IReadOnlyList<GridCoord> cells, int amount)
+        {
+            if (amount <= 0 || cells.Count == 0) return;
+
+            float sumRow = 0f, sumCol = 0f;
+            foreach (var c in cells)
+            {
+                sumRow += c.Row;
+                sumCol += c.Col;
+            }
+
+            int size = _session.Board.SizeValue;
+            int avgRow = Mathf.Clamp(Mathf.RoundToInt(sumRow / cells.Count), 0, size - 1);
+            int avgCol = Mathf.Clamp(Mathf.RoundToInt(sumCol / cells.Count), 0, size - 1);
+
+            var cell = _gridView.GetCell(avgRow, avgCol);
+            Vector2 screenPoint = cell.RectTransform.position;
+            var canvasRect = (RectTransform)_canvasTransform;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, null, out var localPoint))
+                ScorePopupEffect.Play(this, _canvasTransform, localPoint, amount);
         }
 
         private void PlayMergeBurst(CellView cell)
@@ -246,7 +270,6 @@ namespace BlockMerge.Gameplay
                 image.type = Image.Type.Sliced;
                 image.color = color;
                 image.raycastTarget = false;
-                UiFactory.AddRoundedHighlight(image.transform);
             }
 
             _dragGhost = ghost;

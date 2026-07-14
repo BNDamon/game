@@ -26,32 +26,32 @@ namespace BlockMerge.Gameplay
         {
             var root = UiFactory.CreateRect("Hud", parent);
             var rootLayout = root.gameObject.AddComponent<VerticalLayoutGroup>();
-            rootLayout.spacing = 10f;
+            rootLayout.spacing = 8f;
             rootLayout.childControlWidth = true;
             rootLayout.childControlHeight = true;
             rootLayout.childForceExpandWidth = true;
             rootLayout.childForceExpandHeight = false;
             var rootLayoutElement = root.gameObject.AddComponent<LayoutElement>();
-            rootLayoutElement.preferredHeight = 170f;
+            rootLayoutElement.preferredHeight = 112f;
 
             var hud = root.gameObject.AddComponent<HudView>();
 
             var scoreRow = UiFactory.CreateRect("ScoreRow", root);
             var scoreLayout = scoreRow.gameObject.AddComponent<HorizontalLayoutGroup>();
-            scoreLayout.spacing = 12f;
+            scoreLayout.spacing = 10f;
             scoreLayout.childControlWidth = true;
             scoreLayout.childControlHeight = true;
             scoreLayout.childForceExpandWidth = true;
             scoreLayout.childForceExpandHeight = true;
             var scoreRowElement = scoreRow.gameObject.AddComponent<LayoutElement>();
-            scoreRowElement.preferredHeight = 90f;
+            scoreRowElement.preferredHeight = 56f;
 
             CreateStat(scoreRow, "Score", out hud._scoreText);
             CreateStat(scoreRow, "Best", out hud._bestText);
 
             var meterBg = UiFactory.CreateRoundedPanel("MeterBg", root, PanelColor);
             var meterBgElement = meterBg.gameObject.AddComponent<LayoutElement>();
-            meterBgElement.preferredHeight = 60f;
+            meterBgElement.preferredHeight = 44f;
             hud._meterBgRect = meterBg.rectTransform;
 
             // A soft glow sits behind the track, larger than the box itself, so it can bloom
@@ -90,19 +90,22 @@ namespace BlockMerge.Gameplay
             return hud;
         }
 
+        /// <summary>A compact horizontal pill: small muted label on the left, bold value on
+        /// the right — not a tall stacked box, so it reads as a HUD chip rather than a panel.</summary>
         private static void CreateStat(Transform parent, string label, out Text valueText)
         {
             var box = UiFactory.CreateRoundedPanel(label + "Box", parent, PanelColor);
-            var layout = box.gameObject.AddComponent<VerticalLayoutGroup>();
+            var layout = box.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.spacing = 4f;
+            layout.spacing = 6f;
+            layout.padding = new RectOffset(18, 18, 0, 0);
             layout.childControlWidth = true;
             layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = true;
 
-            UiFactory.CreateText(label + "Label", box.transform, label.ToUpperInvariant(), 20, MutedColor);
-            valueText = UiFactory.CreateText(label + "Value", box.transform, "0", 36, TextColor);
+            UiFactory.CreateText(label + "Label", box.transform, label.ToUpperInvariant(), 15, MutedColor);
+            valueText = UiFactory.CreateText(label + "Value", box.transform, "0", 26, TextColor);
         }
 
         /// <summary>Instant, no-animation set — use for initial load / restart.</summary>

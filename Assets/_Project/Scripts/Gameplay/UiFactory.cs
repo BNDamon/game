@@ -14,7 +14,6 @@ namespace BlockMerge.Gameplay
 
         private static Sprite _solidSprite;
         private static Sprite _roundedSprite;
-        private static Sprite _roundedHighlightSprite;
 
         public static Sprite SolidSprite
         {
@@ -38,31 +37,20 @@ namespace BlockMerge.Gameplay
         /// game, so the whole UI reads as one consistent shape language instead of flat
         /// squares. Corner radius is fixed in source pixels, so it scales the same way
         /// (roughly constant on-screen roundedness) whether it's stretched to a HUD box or a
-        /// tiny tray mini-cell.</summary>
+        /// tiny tray mini-cell. A subtle brightness gradient (not a separate glossy overlay —
+        /// that read as a dated skeuomorphic bevel) is baked directly into the RGB channels,
+        /// so tinting it with Image.color still multiplies in a faint top-lit look for free.</summary>
         public static Sprite RoundedSprite
         {
             get
             {
                 if (_roundedSprite == null)
-                    _roundedSprite = CreateRoundedRectSprite(opaque: true);
+                    _roundedSprite = CreateRoundedRectSprite();
                 return _roundedSprite;
             }
         }
 
-        /// <summary>Same rounded-rect shape, but the fill fades from a soft white highlight
-        /// at the top to fully transparent below the midline — a cheap "glossy/lit from
-        /// above" overlay laid on top of a flat-colored cell.</summary>
-        public static Sprite RoundedHighlightSprite
-        {
-            get
-            {
-                if (_roundedHighlightSprite == null)
-                    _roundedHighlightSprite = CreateRoundedRectSprite(opaque: false);
-                return _roundedHighlightSprite;
-            }
-        }
-
-        private static Sprite CreateRoundedRectSprite(bool opaque)
+        private static Sprite CreateRoundedRectSprite()
         {
             const int size = RoundedTextureSize;
             const int r = RoundedCornerRadius;
@@ -75,22 +63,15 @@ namespace BlockMerge.Gameplay
                 for (int x = 0; x < size; x++)
                 {
                     bool inside = IsInsideRoundedRect(x, y, size, r);
-                    byte alpha;
                     if (!inside)
                     {
-                        alpha = 0;
+                        pixels[y * size + x] = new Color32(255, 255, 255, 0);
+                        continue;
                     }
-                    else if (opaque)
-                    {
-                        alpha = 255;
-                    }
-                    else
-                    {
-                        float fromTop = y / (float)(size - 1); // 0 at bottom, 1 at top
-                        float weight = Mathf.Clamp01((fromTop - 0.45f) / 0.55f);
-                        alpha = (byte)Mathf.RoundToInt(weight * 140f);
-                    }
-                    pixels[y * size + x] = new Color32(255, 255, 255, alpha);
+
+                    float fromTop = y / (float)(size - 1); // 0 at bottom, 1 at top
+                    byte shade = (byte)Mathf.RoundToInt(Mathf.Lerp(208f, 255f, fromTop));
+                    pixels[y * size + x] = new Color32(shade, shade, shade, 255);
                 }
             }
 
@@ -169,25 +150,6 @@ namespace BlockMerge.Gameplay
             image.sprite = RoundedSprite;
             image.color = color;
             image.type = Image.Type.Sliced;
-            return image;
-        }
-
-        /// <summary>Adds a static, non-interactive glossy highlight overlay stretched over an
-        /// existing rounded element (e.g. a board cell or mini-cell), giving it a lit-from-
-        /// above look instead of a flat tint.</summary>
-        public static Image AddRoundedHighlight(Transform parent)
-        {
-            var rect = CreateRect("Highlight", parent);
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
-
-            var image = rect.gameObject.AddComponent<Image>();
-            image.sprite = RoundedHighlightSprite;
-            image.type = Image.Type.Sliced;
-            image.color = Color.white;
-            image.raycastTarget = false;
             return image;
         }
 
