@@ -21,5 +21,14 @@ namespace BlockMerge.Core
             var color = (BlockColor)_random.Next(ColorCount);
             return new Piece(shape, color);
         }
+
+        /// <summary>The 1x1 shape with a random color. Used to guarantee a solvable tray:
+        /// a single cell always fits as long as the board isn't completely empty-cell-free,
+        /// which can't happen since a fully-filled board clears itself.</summary>
+        public Piece CreateSingleCell()
+        {
+            var color = (BlockColor)_random.Next(ColorCount);
+            return new Piece(PieceShapes.All[0], color);
+        }
     }
 }

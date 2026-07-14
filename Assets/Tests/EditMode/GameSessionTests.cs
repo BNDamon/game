@@ -139,6 +139,43 @@ namespace BlockMerge.Core.Tests
         }
 
         [Test]
+        public void RefillTray_GuaranteesAtLeastOnePieceFitsAfterRefill()
+        {
+            var session = new GameSession(4, new PieceFactory(new SquareAfterSingleCellsRandom()));
+
+            // Checkerboard-fill the board directly via Board.Place (bypassing PlacePiece):
+            // odd (row+col) cells solid, even cells empty. No 2x2 block of empty cells
+            // exists anywhere, so a 2x2 square piece can never land once this is in place.
+            for (int r = 0; r < 4; r++)
+                for (int c = 0; c < 4; c++)
+                    if ((r + c) % 2 == 1)
+                        session.Board.Place(SingleCell(BlockColor.Red), new GridCoord(r, c));
+
+            // The fixed factory hands out single cells for these first three placements,
+            // consuming the whole tray and triggering a refill on the third call...
+            session.PlacePiece(0, new GridCoord(0, 0));
+            session.PlacePiece(1, new GridCoord(0, 2));
+            session.PlacePiece(2, new GridCoord(1, 1));
+
+            // ...after which the factory always hands out 2x2 squares, none of which fit
+            // this checkerboard. The solvability guarantee should have swapped one slot for
+            // a single cell that does fit, rather than leaving the tray all-unplaceable.
+            Assert.IsTrue(Array.Exists(session.Tray, p => session.Board.HasAnyValidPlacement(p)));
+        }
+
+        private sealed class SquareAfterSingleCellsRandom : Random
+        {
+            private int _callCount;
+
+            public override int Next(int maxValue)
+            {
+                _callCount++;
+                if (_callCount <= 6) return 0; // first 3 CreateRandom() calls: single-cell, Red
+                return maxValue == PieceShapes.All.Count ? 5 : 0; // afterward: 2x2 square, Red
+            }
+        }
+
+        [Test]
         public void Restart_ClearsBoardScoreAndMeter()
         {
             var session = NewDeterministicSession();

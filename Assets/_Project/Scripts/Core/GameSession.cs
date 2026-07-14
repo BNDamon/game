@@ -41,6 +41,11 @@ namespace BlockMerge.Core
         {
             for (int i = 0; i < TraySize; i++)
                 Tray[i] = _pieceFactory.CreateRandom();
+
+            // Guarantee at least one piece in the new tray actually fits the current board,
+            // so a refill can never hand the player an instant, unfair game-over.
+            if (!Array.Exists(Tray, p => Board.HasAnyValidPlacement(p)))
+                Tray[0] = _pieceFactory.CreateSingleCell();
         }
 
         public bool CanPlace(int trayIndex, GridCoord origin)
