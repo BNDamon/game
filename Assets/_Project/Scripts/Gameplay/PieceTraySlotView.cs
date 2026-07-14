@@ -6,21 +6,24 @@ using UnityEngine.UI;
 
 namespace BlockMerge.Gameplay
 {
-    public sealed class PieceTraySlotView : MonoBehaviour, IPointerClickHandler
+    public sealed class PieceTraySlotView : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
     {
         private static readonly Color Idle = new Color32(0x1e, 0x21, 0x29, 0xff);
-        private static readonly Color Selected = new Color32(0xff, 0xd3, 0x4d, 0xff);
+        private static readonly Color Used = new Color32(0x1e, 0x21, 0x29, 0x50);
 
         private const float SlotSize = 220f;
         private const float MiniCell = 26f;
         private const float MiniSpacing = 2f;
 
-        public event Action<int> Clicked;
+        public event Action<int, PointerEventData> DragStarted;
+        public event Action<PointerEventData> DragMoved;
+        public event Action<int, PointerEventData> DragEnded;
 
         public int Index { get; private set; }
 
         private Image _background;
         private RectTransform _shapeContainer;
+        private Piece _currentPiece;
 
         public static PieceTraySlotView Create(Transform parent, int index)
         {
@@ -47,14 +50,24 @@ namespace BlockMerge.Gameplay
             return slot;
         }
 
-        public void Render(Piece piece, bool selected)
+        /// <summary>Renders the slot's piece. isBeingDragged hides the mini-shape (a floating
+        /// ghost takes its place under the finger) without hiding the slot itself, so the
+        /// tray layout doesn't jump around mid-drag.</summary>
+        public void Render(Piece piece, bool isBeingDragged)
         {
+            _currentPiece = piece;
+
             for (int i = _shapeContainer.childCount - 1; i >= 0; i--)
                 Destroy(_shapeContainer.GetChild(i).gameObject);
 
-            _background.color = selected ? Selected : Idle;
-            gameObject.SetActive(piece != null);
-            if (piece == null) return;
+            if (piece == null)
+            {
+                _background.color = Used;
+                return;
+            }
+
+            _background.color = Idle;
+            if (isBeingDragged) return;
 
             int maxRow = 0, maxCol = 0;
             foreach (var cell in piece.Cells)
@@ -83,9 +96,22 @@ namespace BlockMerge.Gameplay
             }
         }
 
-        public void OnPointerClick(PointerEventData eventData)
+        public void OnBeginDrag(PointerEventData eventData)
         {
-            if (gameObject.activeSelf) Clicked?.Invoke(Index);
+            if (_currentPiece == null) return;
+            DragStarted?.Invoke(Index, eventData);
+        }
+
+        public void OnDrag(PointerEventData eventData)
+        {
+            if (_currentPiece == null) return;
+            DragMoved?.Invoke(eventData);
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+            if (_currentPiece == null) return;
+            DragEnded?.Invoke(Index, eventData);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,8 @@ namespace BlockMerge.Gameplay
         private Text _scoreText;
         private Text _bestText;
         private RectTransform _meterFill;
+        private Coroutine _meterCoroutine;
+        private Coroutine _scoreCoroutine;
 
         public static HudView Create(Transform parent)
         {
@@ -79,13 +82,56 @@ namespace BlockMerge.Gameplay
             valueText = UiFactory.CreateText(label + "Value", box.transform, "0", 36, TextColor);
         }
 
+        /// <summary>Instant, no-animation set — use for initial load / restart.</summary>
         public void SetScore(int score) => _scoreText.text = score.ToString();
         public void SetBest(int best) => _bestText.text = best.ToString();
 
+        /// <summary>Instant, no-animation set — use for initial load / restart.</summary>
         public void SetMeter(int value, int max)
         {
             float fraction = max <= 0 ? 0f : Mathf.Clamp01((float)value / max);
             _meterFill.anchorMax = new Vector2(fraction, 1f);
+        }
+
+        public void SetScoreAnimated(int score)
+        {
+            if (_scoreCoroutine != null) StopCoroutine(_scoreCoroutine);
+            _scoreCoroutine = StartCoroutine(AnimateScore(score));
+        }
+
+        public void SetMeterAnimated(int value, int max)
+        {
+            float target = max <= 0 ? 0f : Mathf.Clamp01((float)value / max);
+            if (_meterCoroutine != null) StopCoroutine(_meterCoroutine);
+            _meterCoroutine = StartCoroutine(AnimateMeter(target));
+        }
+
+        private IEnumerator AnimateScore(int target)
+        {
+            int.TryParse(_scoreText.text, out var start);
+            const float duration = 0.35f;
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                _scoreText.text = Mathf.RoundToInt(Mathf.Lerp(start, target, t / duration)).ToString();
+                yield return null;
+            }
+            _scoreText.text = target.ToString();
+        }
+
+        private IEnumerator AnimateMeter(float target)
+        {
+            float start = _meterFill.anchorMax.x;
+            const float duration = 0.35f;
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                _meterFill.anchorMax = new Vector2(Mathf.Lerp(start, target, t / duration), 1f);
+                yield return null;
+            }
+            _meterFill.anchorMax = new Vector2(target, 1f);
         }
     }
 }

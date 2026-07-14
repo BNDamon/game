@@ -1,13 +1,16 @@
 using System;
 using BlockMerge.Core;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace BlockMerge.Gameplay
 {
     public sealed class PieceTrayView : MonoBehaviour
     {
-        public event Action<int> SlotClicked;
+        public event Action<int, PointerEventData> DragStarted;
+        public event Action<PointerEventData> DragMoved;
+        public event Action<int, PointerEventData> DragEnded;
 
         private PieceTraySlotView[] _slots;
 
@@ -30,17 +33,19 @@ namespace BlockMerge.Gameplay
             for (int i = 0; i < slotCount; i++)
             {
                 var slot = PieceTraySlotView.Create(rect, i);
-                slot.Clicked += idx => view.SlotClicked?.Invoke(idx);
+                slot.DragStarted += (idx, data) => view.DragStarted?.Invoke(idx, data);
+                slot.DragMoved += data => view.DragMoved?.Invoke(data);
+                slot.DragEnded += (idx, data) => view.DragEnded?.Invoke(idx, data);
                 view._slots[i] = slot;
             }
 
             return view;
         }
 
-        public void Render(Piece[] tray, int? selectedIndex)
+        public void Render(Piece[] tray, int? draggingIndex)
         {
             for (int i = 0; i < _slots.Length; i++)
-                _slots[i].Render(tray[i], selectedIndex.HasValue && selectedIndex.Value == i);
+                _slots[i].Render(tray[i], draggingIndex.HasValue && draggingIndex.Value == i);
         }
     }
 }

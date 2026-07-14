@@ -42,11 +42,13 @@ file, which is risky to author correctly by hand outside the Editor.
 | `UiFactory` | code-only helpers: solid-color sprite, panels, text, buttons, canvas, EventSystem |
 | `BlockColorPalette` | `BlockColor` enum → actual RGB (the prototype's `COLORS` array) |
 | `CellView` / `GridView` | one board cell; the 8×8 (or `Board.SizeValue`) grid of them |
-| `PieceTraySlotView` / `PieceTrayView` | one tray slot rendering a piece's shape; the 3-slot tray |
-| `HudView` | score/best boxes + charge meter bar |
+| `PieceTraySlotView` / `PieceTrayView` | one tray slot (drag source, dims in place once used); the 3-slot tray |
+| `HudView` | score/best boxes (animated count-up) + animated charge meter bar |
 | `PowerUpBar` | bomb/line/color-wipe buttons, shown only when the meter is full |
 | `GameOverPanel` | full-screen overlay + restart |
-| `GameController` | builds the screen, owns the `GameSession`, wires clicks to it |
+| `SfxPlayer` | procedurally synthesized placeholder SFX (place/clear/merge/power-up/game-over) |
+| `BestScoreStore` | persists best score across launches via `PlayerPrefs` |
+| `GameController` | builds the screen, owns the `GameSession`, drives drag input + animations |
 
 | File | Responsibility | Prototype equivalent |
 |---|---|---|
@@ -72,8 +74,8 @@ assets, so this is safe), then **Window → General → Test Runner → EditMode
 
 Tests cover: placement/bounds checks, color-group flood fill, full-line
 detection, merge-threshold behavior, line/merge scoring, charge meter
-clamping, all three power-ups, and full `GameSession` playthroughs (score,
-tray refill, game-over detection, restart).
+clamping, all three power-ups, solvable-tray-refill guarantee, and full
+`GameSession` playthroughs (score, tray refill, game-over detection, restart).
 
 > Note: these tests were written and hand-traced against the ported logic
 > but not run through Unity's Test Runner in this environment (no Unity
@@ -91,26 +93,44 @@ There's no `.unity` scene file checked in yet, but the setup is one step:
    grid, piece tray, power-up bar, and game-over overlay at runtime and
    starts a `GameSession`.
 
-Controls mirror the prototype: tap a tray piece to select it (highlights
-yellow), tap a board cell to place it. When the charge meter fills, three
-power-up buttons appear — tap one, then tap a board cell to apply it.
+Controls: **drag** a tray piece onto the board to place it — a floating
+ghost follows your finger (lifted above it so it's not hidden), and the
+board previews the drop as valid (light) or invalid (red) while you drag.
+When the charge meter fills, three power-up buttons appear — tap one, then
+**tap** a board cell to target it (power-ups are a single-cell pick, not a
+placement, so that stays tap-based).
 
-> This view/input layer was written and reasoned through carefully but not
-> visually verified — there's no Unity Editor in the environment it was
-> written in, so treat the first Play session as a check for layout/sizing
-> issues (e.g. the grid or tray not filling the screen as expected on your
-> aspect ratio) rather than an already-polished screen. The interaction
-> logic (placement, clears, merges, power-ups, game over) is the same code
-> the EditMode tests already exercise, so that part should be solid; it's
-> purely the handwritten UGUI layout code that's unverified.
+Since the last playtest round, this pass adds:
+- **Fairness**: a tray refill can never leave you with zero legal moves —
+  if every freshly-dealt piece would be unplaceable, one slot is swapped
+  for a single cell (which always fits, since a fully-packed board would
+  have already cleared itself).
+- **Feel**: placed cells pop in, cleared cells pop-and-fade, merged cells
+  glow brighter and longer before converting to charge, the meter bar eases
+  toward its new value instead of snapping, and the score counts up instead
+  of jumping.
+- **Sound**: short synthesized tones on place/clear/merge/power-up/game-over
+  — placeholders standing in for real SFX, so there's audio feedback before
+  any sound design exists.
+- **Persistence**: best score survives closing the app (`PlayerPrefs`).
+
+> The drag input and animation code is new since the last confirmed-working
+> playtest and hasn't been visually verified — there's no Unity Editor in
+> the environment it was written in. The underlying game logic it's built
+> on (placement, clears, merges, power-ups, solvability) is the same Core
+> code the EditMode tests exercise, so that part should be solid; treat the
+> drag feel and animation timing as the things to sanity-check first.
 
 ## What's next
 
 1. Save a `Scenes/Main.unity` scene once the one-GameObject setup above is
    confirmed working, so it's not manual every time.
-2. Juice: clear/merge VFX (the prototype's `.clearing` / `.merging` CSS
-   animations — a scale+fade tween and a scale+brighten tween are the
-   direct equivalents), meter fill animation, drag-to-place instead of
-   tap-to-select if that feels better once playable.
-3. Monetization (rewarded video, interstitial, IAP) and an actual art pass,
-   once the mechanic itself feels right in Unity.
+2. Real audio and an actual art pass (the flat-color-square constraint was
+   deliberate for nailing the mechanic first — this is where that ends).
+3. **Monetization (rewarded video, interstitial, IAP)** — this is the next
+   big piece, and it needs your input specifically: which ad network(s)
+   (Unity Ads, AdMob, ironSource, etc.), whether you already have
+   developer accounts set up for iOS/Android, and what the IAP catalog
+   should look like (remove-ads, currency, cosmetics). Flagging this now
+   rather than guessing, since it's the one area that depends on accounts
+   only you have access to.
