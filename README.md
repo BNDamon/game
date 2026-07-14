@@ -6,6 +6,11 @@ clears, any same-colored blocks that were touching *within that line* fuse
 into charge instead of popping, filling a meter that unlocks a power-up
 (bomb / line-clear / color-wipe).
 
+Visual identity leans into that mechanic: an "energy/charge" theme where
+blocks are rounded and glossy, merges burst into particles, the charge meter
+reads as a glowing power core, and the whole screen's background subtly
+warms up as charge builds.
+
 The mechanic was validated in an HTML/JS prototype first; this project is a
 straight port of that prototype's game logic into a Unity project, starting
 with the data model before any UI/art/monetization work.
@@ -31,24 +36,26 @@ Assets/
 `Scripts/Core` has **no UnityEngine dependency** (`noEngineReferences: true`
 in its asmdef) — it's plain C#, so it's fast to test and portable if the
 engine ever changes. `Scripts/Gameplay` is the MonoBehaviour layer: it renders
-`Core` state as flat colored UGUI panels (no art assets — a solid white 4×4
-texture tinted per-cell) and forwards clicks into `GameSession`. It's built
-entirely from code in `GameController.Awake()` — Canvas, HUD, grid, tray,
-power-up bar, game-over panel — rather than a hand-authored `.unity` scene
-file, which is risky to author correctly by hand outside the Editor.
+`Core` state as UGUI panels — no art assets, everything (rounded-rect shapes,
+the glossy top-highlight, "particle" bursts) is generated from code — and
+forwards input into `GameSession`. It's built entirely from code in
+`GameController.Awake()` — Canvas, HUD, grid, tray, power-up bar, game-over
+panel — rather than a hand-authored `.unity` scene file, which is risky to
+author correctly by hand outside the Editor.
 
 | Gameplay file | Responsibility |
 |---|---|
-| `UiFactory` | code-only helpers: solid-color sprite, panels, text, buttons, canvas, EventSystem |
+| `UiFactory` | code-only helpers: solid + rounded-rect sprites (generated `Texture2D`s, 9-sliced), glossy highlight overlay, panels, text, buttons, canvas, EventSystem |
 | `BlockColorPalette` | `BlockColor` enum → actual RGB (the prototype's `COLORS` array) |
-| `CellView` / `GridView` | one board cell; the 8×8 (or `Board.SizeValue`) grid of them |
-| `PieceTraySlotView` / `PieceTrayView` | one tray slot (drag source, dims in place once used); the 3-slot tray |
-| `HudView` | score/best boxes (animated count-up) + animated charge meter bar |
-| `PowerUpBar` | bomb/line/color-wipe buttons, shown only when the meter is full |
-| `GameOverPanel` | full-screen overlay + restart |
+| `CellView` / `GridView` | one board cell (rounded, glossy, animated); the 8×8 (or `Board.SizeValue`) grid of them |
+| `PieceTraySlotView` / `PieceTrayView` | one tray slot (drag source, dims in place once used, shakes red on an invalid drop); the 3-slot tray |
+| `HudView` | score/best boxes (animated count-up) + the charge meter as a "power core" — glow that breathes with charge level, a flash pulse on reaching full |
+| `PowerUpBar` | bomb/line/color-wipe buttons (charged gold styling, gentle breathing pulse while available) |
+| `GameOverPanel` | full-screen overlay that fades/scales in + restart |
+| `BurstEffect` | small burst of fading/expanding squares where a merge happens (fake "particles" — a real ParticleSystem would render behind our Screen Space - Overlay canvas) |
 | `SfxPlayer` | procedurally synthesized placeholder SFX (place/clear/merge/power-up/game-over) |
 | `BestScoreStore` | persists best score across launches via `PlayerPrefs` |
-| `GameController` | builds the screen, owns the `GameSession`, drives drag input + animations |
+| `GameController` | builds the screen, owns the `GameSession`, drives drag input + all of the above |
 
 | File | Responsibility | Prototype equivalent |
 |---|---|---|
@@ -105,6 +112,17 @@ Since the last playtest round, this pass adds:
   if every freshly-dealt piece would be unplaceable, one slot is swapped
   for a single cell (which always fits, since a fully-packed board would
   have already cleared itself).
+- **Unmissable feedback**: an invalid drop now flashes red and shakes back
+  into its tray slot instead of silently snapping back, and the game-over
+  screen fades/scales in instead of just appearing — the actual complaint
+  that prompted this ("it doesn't tell you, it just ends") should be fixed
+  either way, whichever path was actually causing it.
+- **Visual identity**: rounded, glossy blocks (a generated rounded-rect
+  texture + soft top-highlight, not flat squares); the charge meter as a
+  glowing "power core" that breathes brighter as it fills and flashes when
+  full; a small burst of "particles" where blocks merge; the background
+  subtly warming from its base dark-blue toward an ember tone as the meter
+  builds, so the whole screen's mood tracks the mechanic.
 - **Feel**: placed cells pop in, cleared cells pop-and-fade, merged cells
   glow brighter and longer before converting to charge, the meter bar eases
   toward its new value instead of snapping, and the score counts up instead
@@ -114,12 +132,16 @@ Since the last playtest round, this pass adds:
   any sound design exists.
 - **Persistence**: best score survives closing the app (`PlayerPrefs`).
 
-> The drag input and animation code is new since the last confirmed-working
-> playtest and hasn't been visually verified — there's no Unity Editor in
-> the environment it was written in. The underlying game logic it's built
-> on (placement, clears, merges, power-ups, solvability) is the same Core
-> code the EditMode tests exercise, so that part should be solid; treat the
-> drag feel and animation timing as the things to sanity-check first.
+> All of this is new since the last confirmed-working playtest and hasn't
+> been visually verified — there's no Unity Editor in the environment it
+> was written in. The underlying game logic it's built on (placement,
+> clears, merges, power-ups, solvability) is the same Core code the
+> EditMode tests exercise, so that part should be solid; treat the drag
+> feel, animation timing, and the new rounded-corner rendering as the
+> things to sanity-check first — a 9-sliced sprite with a fixed pixel
+> corner radius is a well-worn Unity technique, but it's the one part of
+> this pass most likely to look slightly off on a first look (e.g. corners
+> a little too round or too sharp) and want a quick numeric tweak.
 
 ## What's next
 

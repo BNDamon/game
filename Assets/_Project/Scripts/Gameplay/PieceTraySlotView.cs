@@ -35,7 +35,8 @@ namespace BlockMerge.Gameplay
             layoutElement.preferredHeight = SlotSize;
 
             var background = rect.gameObject.AddComponent<Image>();
-            background.sprite = UiFactory.SolidSprite;
+            background.sprite = UiFactory.RoundedSprite;
+            background.type = Image.Type.Sliced;
             background.color = Idle;
 
             var shapeRect = UiFactory.CreateRect("Shape", rect);
@@ -93,8 +94,10 @@ namespace BlockMerge.Gameplay
                 cellRect.anchoredPosition = new Vector2(x, y);
 
                 var image = cellRect.gameObject.AddComponent<Image>();
-                image.sprite = UiFactory.SolidSprite;
+                image.sprite = UiFactory.RoundedSprite;
+                image.type = Image.Type.Sliced;
                 image.color = color;
+                UiFactory.AddRoundedHighlight(image.transform);
             }
         }
 

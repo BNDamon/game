@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using BlockMerge.Core;
 using UnityEngine;
 using UnityEngine.UI;
@@ -7,8 +8,10 @@ namespace BlockMerge.Gameplay
 {
     public sealed class PowerUpBar : MonoBehaviour
     {
-        private static readonly Color ButtonColor = new Color32(0x1e, 0x21, 0x29, 0xff);
-        private static readonly Color TextColor = new Color32(0xee, 0xf0, 0xf4, 0xff);
+        // Charged accent styling (matches the meter's fill color) — these buttons only ever
+        // appear once the meter is full, so they should read as "ready to use", not chrome.
+        private static readonly Color ButtonColor = new Color32(0xff, 0xd3, 0x4d, 0xff);
+        private static readonly Color TextColor = new Color32(0x14, 0x16, 0x1c, 0xff);
 
         public event Action<PowerUpType> PowerUpChosen;
 
@@ -42,6 +45,24 @@ namespace BlockMerge.Gameplay
             button.onClick.AddListener(() => PowerUpChosen?.Invoke(type));
         }
 
-        public void SetAvailable(bool available) => gameObject.SetActive(available);
+        public void SetAvailable(bool available)
+        {
+            gameObject.SetActive(available);
+            if (available)
+            {
+                StopAllCoroutines();
+                StartCoroutine(BreathingPulseLoop());
+            }
+        }
+
+        private IEnumerator BreathingPulseLoop()
+        {
+            while (true)
+            {
+                float scale = 1f + (Mathf.Sin(Time.time * 2.2f) * 0.5f + 0.5f) * 0.05f;
+                transform.localScale = new Vector3(scale, scale, 1f);
+                yield return null;
+            }
+        }
     }
 }

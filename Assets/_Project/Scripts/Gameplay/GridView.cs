@@ -24,7 +24,8 @@ namespace BlockMerge.Gameplay
             layoutElement.preferredHeight = areaSize;
 
             var panel = rect.gameObject.AddComponent<Image>();
-            panel.sprite = UiFactory.SolidSprite;
+            panel.sprite = UiFactory.RoundedSprite;
+            panel.type = Image.Type.Sliced;
             panel.color = new Color32(0x1e, 0x21, 0x29, 0xff);
 
             const float spacing = 4f;

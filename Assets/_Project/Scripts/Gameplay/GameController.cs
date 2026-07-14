@@ -17,6 +17,7 @@ namespace BlockMerge.Gameplay
     public sealed class GameController : MonoBehaviour
     {
         private static readonly Color BackgroundColor = new Color32(0x14, 0x16, 0x1c, 0xff);
+        private static readonly Color ChargedBackgroundColor = new Color32(0x2a, 0x1c, 0x10, 0xff);
         private const float DragLiftOffset = 220f;
         private const float GhostCellSize = 96f;
         private const float GhostSpacing = 4f;
@@ -28,6 +29,7 @@ namespace BlockMerge.Gameplay
         private PowerUpBar _powerUpBar;
         private GameOverPanel _gameOverPanel;
         private SfxPlayer _sfx;
+        private Image _background;
 
         private Transform _canvasTransform;
         private RectTransform _dragGhost;
@@ -44,9 +46,9 @@ namespace BlockMerge.Gameplay
             var canvas = UiFactory.CreateCanvas("Canvas");
             _canvasTransform = canvas.transform;
 
-            var background = canvas.gameObject.AddComponent<Image>();
-            background.sprite = UiFactory.SolidSprite;
-            background.color = BackgroundColor;
+            _background = canvas.gameObject.AddComponent<Image>();
+            _background.sprite = UiFactory.SolidSprite;
+            _background.color = BackgroundColor;
 
             var root = UiFactory.CreateRect("Root", canvas.transform);
             root.anchorMin = Vector2.zero;
@@ -149,8 +151,15 @@ namespace BlockMerge.Gameplay
                 foreach (var coord in outcome.LineClear.ClearedCells)
                 {
                     var cell = _gridView.GetCell(coord.Row, coord.Col);
-                    if (mergedSet.Contains(coord)) cell.PlayMergeAndEmpty();
-                    else cell.PlayClearAndEmpty();
+                    if (mergedSet.Contains(coord))
+                    {
+                        PlayMergeBurst(cell);
+                        cell.PlayMergeAndEmpty();
+                    }
+                    else
+                    {
+                        cell.PlayClearAndEmpty();
+                    }
                 }
 
                 _sfx.Play(SfxPlayer.SfxKind.Clear);
@@ -158,6 +167,14 @@ namespace BlockMerge.Gameplay
             }
 
             RefreshNonGridUi(outcome.GameOver);
+        }
+
+        private void PlayMergeBurst(CellView cell)
+        {
+            Vector2 screenPoint = cell.RectTransform.position;
+            var canvasRect = (RectTransform)_canvasTransform;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, null, out var localPoint))
+                BurstEffect.Play(this, _canvasTransform, localPoint, cell.CurrentColor);
         }
 
         private void OnCellClicked(int row, int col)
@@ -225,9 +242,11 @@ namespace BlockMerge.Gameplay
                 cellRect.anchoredPosition = new Vector2(x, y);
 
                 var image = cellRect.gameObject.AddComponent<Image>();
-                image.sprite = UiFactory.SolidSprite;
+                image.sprite = UiFactory.RoundedSprite;
+                image.type = Image.Type.Sliced;
                 image.color = color;
                 image.raycastTarget = false;
+                UiFactory.AddRoundedHighlight(image.transform);
             }
 
             _dragGhost = ghost;
@@ -284,6 +303,7 @@ namespace BlockMerge.Gameplay
             _hudView.SetBest(_session.Best);
             _hudView.SetMeter(_session.Meter.Value, ChargeMeter.Max);
             _powerUpBar.SetAvailable(_session.PowerUpAvailable);
+            UpdateBackgroundTint();
             SaveBestScoreIfImproved();
         }
 
@@ -294,6 +314,7 @@ namespace BlockMerge.Gameplay
             _hudView.SetBest(_session.Best);
             _hudView.SetMeterAnimated(_session.Meter.Value, ChargeMeter.Max);
             _powerUpBar.SetAvailable(_session.PowerUpAvailable);
+            UpdateBackgroundTint();
             SaveBestScoreIfImproved();
 
             if (gameOver)
@@ -308,6 +329,14 @@ namespace BlockMerge.Gameplay
             if (_session.Best <= _lastSavedBest) return;
             _lastSavedBest = _session.Best;
             BestScoreStore.Save(_lastSavedBest);
+        }
+
+        /// <summary>Ties the whole screen's mood to how charged up the meter is — subtly
+        /// warms from the base dark-blue toward an ember tone as charge builds.</summary>
+        private void UpdateBackgroundTint()
+        {
+            float fraction = Mathf.Clamp01((float)_session.Meter.Value / ChargeMeter.Max);
+            _background.color = Color.Lerp(BackgroundColor, ChargedBackgroundColor, fraction);
         }
     }
 }

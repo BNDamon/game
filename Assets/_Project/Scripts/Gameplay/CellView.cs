@@ -19,6 +19,7 @@ namespace BlockMerge.Gameplay
         public int Row { get; private set; }
         public int Col { get; private set; }
         public RectTransform RectTransform { get; private set; }
+        public Color CurrentColor => _currentColor;
 
         private Image _image;
         private Color _currentColor = EmptyColor;
@@ -26,7 +27,9 @@ namespace BlockMerge.Gameplay
 
         public static CellView Create(Transform parent, int row, int col)
         {
-            var image = UiFactory.CreatePanel($"Cell_{row}_{col}", parent, EmptyColor);
+            var image = UiFactory.CreateRoundedPanel($"Cell_{row}_{col}", parent, EmptyColor);
+            UiFactory.AddRoundedHighlight(image.transform);
+
             var cell = image.gameObject.AddComponent<CellView>();
             cell._image = image;
             cell.RectTransform = image.rectTransform;
