@@ -142,7 +142,7 @@ namespace BlockMerge.Gameplay
         private IEnumerator AnimateScore(int target)
         {
             int.TryParse(_scoreText.text, out var start);
-            const float duration = 0.35f;
+            const float duration = 0.22f;
             float t = 0f;
             while (t < duration)
             {
@@ -156,7 +156,7 @@ namespace BlockMerge.Gameplay
         private IEnumerator AnimateMeter(float target)
         {
             float start = _meterFill.anchorMax.x;
-            const float duration = 0.35f;
+            const float duration = 0.22f;
             float t = 0f;
             while (t < duration)
             {

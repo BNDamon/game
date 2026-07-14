@@ -41,7 +41,7 @@ namespace BlockMerge.Gameplay
             return player;
         }
 
-        public void Play(SfxKind kind)
+        public void Play(SfxKind kind, float pitch = 1f)
         {
             var clip = kind switch
             {
@@ -52,7 +52,9 @@ namespace BlockMerge.Gameplay
                 SfxKind.GameOver => _gameOverClip,
                 _ => null
             };
-            if (clip != null) _source.PlayOneShot(clip);
+            if (clip == null) return;
+            _source.pitch = pitch;
+            _source.PlayOneShot(clip);
         }
 
         private static AudioClip GenerateTone(float frequency, float duration, float volume, bool rising)

@@ -74,6 +74,8 @@ namespace BlockMerge.Gameplay
             _trayView = PieceTrayView.Create(root, GameSession.TraySize);
             _powerUpBar = PowerUpBar.Create(root);
 
+            AmbientEmbers.Create(canvas.transform);
+
             _gameOverPanel = GameOverPanel.Create(canvas.transform);
 
             _gridView.CellClicked += OnCellClicked;
@@ -84,6 +86,11 @@ namespace BlockMerge.Gameplay
             _gameOverPanel.RestartClicked += OnRestartClicked;
 
             RenderAllImmediate();
+        }
+
+        private void Update()
+        {
+            _session.Tick(Time.deltaTime);
         }
 
         private void OnTrayDragStarted(int index, PointerEventData eventData)
@@ -162,18 +169,26 @@ namespace BlockMerge.Gameplay
                     }
                 }
 
-                _sfx.Play(SfxPlayer.SfxKind.Clear);
-                if (outcome.LineClear.MergedGroups.Count > 0) _sfx.Play(SfxPlayer.SfxKind.Merge);
+                // Pitch and flash intensity both scale with combo heat, so a long chain reads
+                // as faster and bigger even out of the corner of an eye, not just a number.
+                float comboHeat = Mathf.Clamp01((outcome.ComboCount - 1) / 6f);
+                float pitch = Mathf.Lerp(1f, 1.6f, comboHeat);
 
-                PlayScorePopup(outcome.LineClear.ClearedCells, outcome.LineClear.LineBonus + outcome.LineClear.MergeBonus);
+                _sfx.Play(SfxPlayer.SfxKind.Clear, pitch);
+                if (outcome.LineClear.MergedGroups.Count > 0) _sfx.Play(SfxPlayer.SfxKind.Merge, pitch);
+
+                if (outcome.ComboCount >= 2)
+                    ScreenFlashEffect.Play(this, _canvasTransform, new Color32(0xff, 0x8a, 0x3d, 0xff), Mathf.Lerp(0.12f, 0.35f, comboHeat));
+
+                PlayScorePopups(outcome.LineClear.ClearedCells, outcome.ScoreAwarded, outcome.ComboCount);
             }
 
             RefreshNonGridUi(outcome.GameOver);
         }
 
-        private void PlayScorePopup(IReadOnlyList<GridCoord> cells, int amount)
+        private void PlayScorePopups(IReadOnlyList<GridCoord> cells, int amount, int comboCount)
         {
-            if (amount <= 0 || cells.Count == 0) return;
+            if (cells.Count == 0) return;
 
             float sumRow = 0f, sumCol = 0f;
             foreach (var c in cells)
@@ -189,8 +204,10 @@ namespace BlockMerge.Gameplay
             var cell = _gridView.GetCell(avgRow, avgCol);
             Vector2 screenPoint = cell.RectTransform.position;
             var canvasRect = (RectTransform)_canvasTransform;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, null, out var localPoint))
-                ScorePopupEffect.Play(this, _canvasTransform, localPoint, amount);
+            if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screenPoint, null, out var localPoint)) return;
+
+            ScorePopupEffect.Play(this, _canvasTransform, localPoint, amount);
+            ComboPopupEffect.Play(this, _canvasTransform, localPoint, comboCount);
         }
 
         private void PlayMergeBurst(CellView cell)

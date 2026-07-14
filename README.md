@@ -36,8 +36,8 @@ Assets/
 `Scripts/Core` has **no UnityEngine dependency** (`noEngineReferences: true`
 in its asmdef) — it's plain C#, so it's fast to test and portable if the
 engine ever changes. `Scripts/Gameplay` is the MonoBehaviour layer: it renders
-`Core` state as UGUI panels — no art assets, everything (rounded-rect shapes,
-the glossy top-highlight, "particle" bursts) is generated from code — and
+`Core` state as UGUI panels — no art assets, everything (the rounded-rect
+shape, "particle" bursts, ambient embers) is generated from code — and
 forwards input into `GameSession`. It's built entirely from code in
 `GameController.Awake()` — Canvas, HUD, grid, tray, power-up bar, game-over
 panel — rather than a hand-authored `.unity` scene file, which is risky to
@@ -45,19 +45,22 @@ author correctly by hand outside the Editor.
 
 | Gameplay file | Responsibility |
 |---|---|
-| `UiFactory` | code-only helpers: solid + rounded-rect sprites (generated `Texture2D`s, 9-sliced), glossy highlight overlay, panels, text, buttons, canvas, EventSystem |
+| `UiFactory` | code-only helpers: solid + rounded-rect sprites (a generated `Texture2D`, 9-sliced, with a subtle brightness gradient baked into the RGB channels), panels, text, buttons, canvas, EventSystem |
 | `BlockColorPalette` | `BlockColor` enum → actual RGB (the prototype's `COLORS` array) |
-| `CellView` / `GridView` | one board cell (rounded, glossy, animated); the 8×8 (or `Board.SizeValue`) grid of them |
+| `CellView` / `GridView` | one board cell (rounded, animated, idle breathing glow while filled); the 8×8 (or `Board.SizeValue`) grid of them |
 | `PieceTraySlotView` / `PieceTrayView` | one tray slot (drag source, dims in place once used, shakes red on an invalid drop); the 3-slot tray |
-| `HudView` | score/best boxes (animated count-up) + the charge meter as a "power core" — glow that breathes with charge level, a flash pulse on reaching full |
+| `HudView` | compact score/best chips (animated count-up) + the charge meter as a "power core" — glow that breathes with charge level, a flash pulse on reaching full |
 | `PowerUpBar` | bomb/line/color-wipe buttons (charged gold styling, gentle breathing pulse while available) |
 | `GameOverPanel` | full-screen overlay that fades/scales in + restart |
 | `BurstEffect` | small burst of fading/expanding squares where a merge happens (fake "particles" — a real ParticleSystem would render behind our Screen Space - Overlay canvas) |
-| `SfxPlayer` | procedurally synthesized placeholder SFX (place/clear/merge/power-up/game-over) |
+| `ScorePopupEffect` / `ComboPopupEffect` | floating "+N" and "COMBO x3" callouts where a scoring clear lands |
+| `ScreenFlashEffect` | brief full-screen color flash, intensity scaling with combo heat |
+| `AmbientEmbers` | continuously drifting background embers so the board never reads as a static screenshot |
+| `SfxPlayer` | procedurally synthesized placeholder SFX (place/clear/merge/power-up/game-over), pitch-shifts up with combo heat |
 | `BestScoreStore` | persists best score across launches via `PlayerPrefs` |
 | `GameController` | builds the screen, owns the `GameSession`, drives drag input + all of the above |
 
-| File | Responsibility | Prototype equivalent |
+| Core file | Responsibility | Prototype equivalent |
 |---|---|---|
 | `GridCoord` | row/col struct (no `Vector2Int`, to keep Core Unity-free) | — |
 | `BlockColor` | 5-color enum | `COLORS` |
@@ -68,10 +71,13 @@ author correctly by hand outside the Editor.
 | `LineClearResolver` | full-line detection, line bonus, merge-vs-pop decision | `resolveLines()` |
 | `ChargeMeter` | clamped 0–100 meter | `meter` |
 | `PowerUpType` / `PowerUpResolver` | bomb / line / color-wipe effects | `usePower()` |
-| `GameSession` | orchestrates the above: score, tray, refill, game-over | the rest of the `<script>` |
+| `ComboTracker` | chains clears within a time window into an escalating score multiplier | — (new, not in the prototype) |
+| `GameSession` | orchestrates the above: score, tray, refill, game-over, combo | the rest of the `<script>` |
 
 Constants (board size 8, merge threshold 3, meter max 100, line bonus 10/line,
-merge bonus 4/cell) are carried over unchanged from the prototype.
+merge bonus 4/cell, combo window 4s, combo multiplier +0.25x per chain up to
+3x) are carried over unchanged from the prototype except the combo system,
+which is new — see below.
 
 ## Running the tests
 
@@ -107,48 +113,60 @@ When the charge meter fills, three power-up buttons appear — tap one, then
 **tap** a board cell to target it (power-ups are a single-cell pick, not a
 placement, so that stays tap-based).
 
-Since the last playtest round, this pass adds:
+### Why a combo system
+
+Feedback on the previous pass was that the game felt generic — like any
+other block-placement clone — and slow/stagnant. Visual polish alone
+doesn't fix that; it needed something that changes how the game actually
+*plays*. So this pass adds a **combo/chain system**: clearing lines quickly,
+back-to-back, builds a streak that multiplies your score (up to 3x),
+decaying if you slow down. It's the thing that turns "place pieces
+carefully" into "how fast can you chain" — a genuinely different feel from
+the deliberate, unhurried pace of most games in this genre, and it's a
+direct extension of the merge-to-charge hook rather than a bolted-on timer.
+Combined with escalating feedback (a bigger callout, a screen flash, the
+SFX pitching up) as the chain grows, this is the game's actual answer to
+"make it feel fast and unique," not just a visual reskin.
+
+This pass also makes the board feel alive even when you're not touching
+it — the biggest single note from the last screenshot ("stagnant board").
+
+- **Combo/chain scoring** (`ComboTracker`, Core): clear lines within a 4s
+  window of each other and each one raises a multiplier (+0.25x per chain,
+  capped at 3x). Waiting too long resets it back to 1x. `GameSession.Tick()`
+  advances the decay clock — `GameController` calls it every frame.
+- **Escalating combo feedback**: a big "COMBO x3" callout on top of the
+  regular "+N" score popup, a screen-wide color flash that gets stronger
+  the longer the chain, and the clear/merge SFX pitching up with it.
+- **Ambient board life**: small embers drift upward across the whole
+  screen continuously, and filled cells have a slow, subtle breathing
+  glow — the board should never look like a static screenshot again, even
+  before you place anything.
+- **Snappier pace**: clear/merge/score/meter animation durations trimmed
+  ~25–35% across the board.
 - **Fairness**: a tray refill can never leave you with zero legal moves —
   if every freshly-dealt piece would be unplaceable, one slot is swapped
   for a single cell (which always fits, since a fully-packed board would
   have already cleared itself).
 - **Unmissable feedback**: an invalid drop now flashes red and shakes back
   into its tray slot instead of silently snapping back, and the game-over
-  screen fades/scales in instead of just appearing — the actual complaint
-  that prompted this ("it doesn't tell you, it just ends") should be fixed
-  either way, whichever path was actually causing it.
-- **Fixed a real bug**: a "used" tray slot's color was nearly transparent
-  against the dark background, so 2 of the 3 tray slots were effectively
-  invisible most of the time — it's opaque now.
-- **Visual identity**: rounded blocks with a subtle brightness gradient
-  baked into the shared rounded-rect texture (an earlier version of this
-  used a separate glossy top-highlight overlay — it read as a dated
-  skeuomorphic bevel and was cut); the charge meter as a glowing "power
-  core" that breathes brighter as it fills and flashes when full; a small
-  burst of "particles" where blocks merge; a floating "+N" where a scoring
-  line/merge lands, not just a number ticking up in the HUD; the background
-  subtly warming from its base dark-blue toward an ember tone as the meter
-  builds. The HUD's score/best chips are also much smaller now — the first
-  pass made them dominate the top of the screen, which is fixed.
-- **Feel**: placed cells pop in, cleared cells pop-and-fade, merged cells
-  glow brighter and longer before converting to charge, the meter bar eases
-  toward its new value instead of snapping, and the score counts up instead
-  of jumping.
-- **Sound**: short synthesized tones on place/clear/merge/power-up/game-over
-  — placeholders standing in for real SFX, so there's audio feedback before
-  any sound design exists.
-- **Persistence**: best score survives closing the app (`PlayerPrefs`).
+  screen fades/scales in instead of just appearing.
+- **Visual fixes from the last round**: the glossy top-highlight overlay
+  read as a dated skeuomorphic bevel and was replaced with a subtle
+  brightness gradient baked directly into the block texture; a "used" tray
+  slot's color was nearly transparent against the dark background (2 of 3
+  tray slots were effectively invisible) and is opaque now; the HUD's
+  score/best boxes were oversized and are now compact chips.
 
-> All of this is new since the last confirmed-working playtest and hasn't
-> been visually verified — there's no Unity Editor in the environment it
-> was written in. The underlying game logic it's built on (placement,
-> clears, merges, power-ups, solvability) is the same Core code the
-> EditMode tests exercise, so that part should be solid; treat the drag
-> feel, animation timing, and the new rounded-corner rendering as the
-> things to sanity-check first — a 9-sliced sprite with a fixed pixel
-> corner radius is a well-worn Unity technique, but it's the one part of
-> this pass most likely to look slightly off on a first look (e.g. corners
-> a little too round or too sharp) and want a quick numeric tweak.
+> All of this is new and hasn't been visually verified — there's no Unity
+> Editor in the environment it was written in. The underlying scoring
+> logic (combo windows, multiplier math, decay) is Core code exercised by
+> EditMode tests, so that part should be solid; the things most worth
+> judging on your own are whether the combo window (4 seconds) and
+> multiplier curve actually *feel* fast and rewarding rather than
+> arbitrary, and whether the ambient embers read as "alive" or as visual
+> noise — both are just numbers I picked and easy to retune once you've
+> played with them.
 
 ## What's next
 

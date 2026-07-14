@@ -24,6 +24,7 @@ namespace BlockMerge.Gameplay
         private Image _image;
         private Color _currentColor = EmptyColor;
         private bool _previewing;
+        private bool _filled;
 
         public static CellView Create(Transform parent, int row, int col)
         {
@@ -49,6 +50,31 @@ namespace BlockMerge.Gameplay
         {
             _currentColor = color ?? EmptyColor;
             if (!_previewing) _image.color = _currentColor;
+            _filled = color.HasValue;
+            RestartBreathing();
+        }
+
+        /// <summary>A slow, subtle brightness pulse on filled cells so the board reads as
+        /// alive even when nothing's being placed — restarted after every other animation
+        /// interrupts it (they all StopAllCoroutines to take over the cell's visuals).</summary>
+        private void RestartBreathing()
+        {
+            StopCoroutine(nameof(BreatheRoutine));
+            if (_filled) StartCoroutine(nameof(BreatheRoutine));
+        }
+
+        private IEnumerator BreatheRoutine()
+        {
+            float phaseOffset = GetInstanceID() * 0.37f;
+            while (true)
+            {
+                if (!_previewing)
+                {
+                    float pulse = (Mathf.Sin(Time.time * 1.6f + phaseOffset) + 1f) * 0.5f;
+                    _image.color = Color.Lerp(_currentColor, Color.white, pulse * 0.12f);
+                }
+                yield return null;
+            }
         }
 
         public void ShowPreview(bool valid)
@@ -94,11 +120,12 @@ namespace BlockMerge.Gameplay
                 yield return null;
             }
             transform.localScale = Vector3.one;
+            RestartBreathing();
         }
 
         private IEnumerator ClearRoutine()
         {
-            const float duration = 0.22f;
+            const float duration = 0.16f;
             var startColor = _currentColor;
             float t = 0f;
             while (t < duration)
@@ -117,7 +144,7 @@ namespace BlockMerge.Gameplay
 
         private IEnumerator MergeRoutine()
         {
-            const float duration = 0.4f;
+            const float duration = 0.28f;
             var startColor = _currentColor;
             float t = 0f;
             while (t < duration)
