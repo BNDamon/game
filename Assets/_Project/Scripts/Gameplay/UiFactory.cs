@@ -153,6 +153,35 @@ namespace BlockMerge.Gameplay
             return image;
         }
 
+        /// <summary>An empty container holding two stretched rounded-rect children — a
+        /// "Shadow" behind and a "Fill" in front — so a filled cell can read as a raised 3D
+        /// card (real elevation, not a flat tint). The shadow starts fully transparent;
+        /// callers toggle its alpha to switch between "raised" (filled) and "flat" (empty)
+        /// looks. A child can't render behind its own parent's Graphic in Unity's UI draw
+        /// order, which is why this needs a plain container rather than the fill living
+        /// directly on the returned rect.</summary>
+        public static RectTransform CreateElevatedCell(string name, Transform parent, Color fillColor, out Image shadow, out Image fill)
+        {
+            var container = CreateRect(name, parent);
+
+            shadow = CreateRoundedPanel("Shadow", container, new Color(0f, 0f, 0f, 0f));
+            var shadowRect = shadow.rectTransform;
+            shadowRect.anchorMin = Vector2.zero;
+            shadowRect.anchorMax = Vector2.one;
+            shadowRect.offsetMin = new Vector2(2f, -5f);
+            shadowRect.offsetMax = new Vector2(2f, -1f);
+            shadow.raycastTarget = false;
+
+            fill = CreateRoundedPanel("Fill", container, fillColor);
+            var fillRect = fill.rectTransform;
+            fillRect.anchorMin = Vector2.zero;
+            fillRect.anchorMax = Vector2.one;
+            fillRect.offsetMin = Vector2.zero;
+            fillRect.offsetMax = Vector2.zero;
+
+            return container;
+        }
+
         public static Text CreateText(string name, Transform parent, string content, int fontSize, Color color,
             TextAnchor anchor = TextAnchor.MiddleCenter)
         {

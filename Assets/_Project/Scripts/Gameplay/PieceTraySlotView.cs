@@ -85,18 +85,17 @@ namespace BlockMerge.Gameplay
 
             foreach (var cellCoord in piece.Cells)
             {
-                var cellRect = UiFactory.CreateRect("MiniCell", _shapeContainer);
+                var cellRect = UiFactory.CreateElevatedCell("MiniCell", _shapeContainer, color, out var shadow, out var fill);
                 cellRect.sizeDelta = new Vector2(MiniCell, MiniCell);
                 cellRect.anchorMin = cellRect.anchorMax = new Vector2(0.5f, 0.5f);
+                fill.raycastTarget = false;
+                var shadowColor = shadow.color;
+                shadowColor.a = 0.35f; // tray pieces are always "filled", so always cast a shadow
+                shadow.color = shadowColor;
 
                 float x = -shapeWidth / 2f + MiniCell / 2f + cellCoord.Col * (MiniCell + MiniSpacing);
                 float y = shapeHeight / 2f - MiniCell / 2f - cellCoord.Row * (MiniCell + MiniSpacing);
                 cellRect.anchoredPosition = new Vector2(x, y);
-
-                var image = cellRect.gameObject.AddComponent<Image>();
-                image.sprite = UiFactory.RoundedSprite;
-                image.type = Image.Type.Sliced;
-                image.color = color;
             }
         }
 

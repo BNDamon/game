@@ -39,15 +39,46 @@ namespace BlockMerge.Gameplay
             var scoreRow = UiFactory.CreateRect("ScoreRow", root);
             var scoreLayout = scoreRow.gameObject.AddComponent<HorizontalLayoutGroup>();
             scoreLayout.spacing = 10f;
+            scoreLayout.childAlignment = TextAnchor.MiddleLeft;
             scoreLayout.childControlWidth = true;
             scoreLayout.childControlHeight = true;
-            scoreLayout.childForceExpandWidth = true;
+            scoreLayout.childForceExpandWidth = false;
             scoreLayout.childForceExpandHeight = true;
             var scoreRowElement = scoreRow.gameObject.AddComponent<LayoutElement>();
-            scoreRowElement.preferredHeight = 56f;
+            scoreRowElement.preferredHeight = 60f;
 
-            CreateStat(scoreRow, "Score", out hud._scoreText);
-            CreateStat(scoreRow, "Best", out hud._bestText);
+            // Score is the hero stat: no box, just bold glowing text, so it doesn't read as
+            // "one of two identical panels" the way the old twin score/best boxes did.
+            var scoreHero = UiFactory.CreateRect("ScoreHero", scoreRow);
+            var scoreHeroLayout = scoreHero.gameObject.AddComponent<VerticalLayoutGroup>();
+            scoreHeroLayout.childAlignment = TextAnchor.MiddleLeft;
+            scoreHeroLayout.spacing = -2f;
+            scoreHeroLayout.childControlWidth = true;
+            scoreHeroLayout.childControlHeight = true;
+            scoreHeroLayout.childForceExpandWidth = false;
+            scoreHeroLayout.childForceExpandHeight = false;
+            var scoreHeroElement = scoreHero.gameObject.AddComponent<LayoutElement>();
+            scoreHeroElement.flexibleWidth = 1f;
+
+            UiFactory.CreateText("ScoreLabel", scoreHero, "SCORE", 14, MutedColor, TextAnchor.MiddleLeft);
+            hud._scoreText = UiFactory.CreateText("ScoreValue", scoreHero, "0", 42, TextColor, TextAnchor.MiddleLeft);
+            hud._scoreText.fontStyle = FontStyle.Bold;
+
+            // Best is secondary: a small fixed-width badge pinned to the right.
+            var bestBadge = UiFactory.CreateRoundedPanel("BestBadge", scoreRow, PanelColor);
+            var bestBadgeLayout = bestBadge.gameObject.AddComponent<HorizontalLayoutGroup>();
+            bestBadgeLayout.childAlignment = TextAnchor.MiddleCenter;
+            bestBadgeLayout.spacing = 6f;
+            bestBadgeLayout.padding = new RectOffset(14, 14, 0, 0);
+            bestBadgeLayout.childControlWidth = true;
+            bestBadgeLayout.childControlHeight = true;
+            bestBadgeLayout.childForceExpandWidth = false;
+            bestBadgeLayout.childForceExpandHeight = true;
+            var bestBadgeElement = bestBadge.gameObject.AddComponent<LayoutElement>();
+            bestBadgeElement.preferredWidth = 150f;
+
+            UiFactory.CreateText("BestLabel", bestBadge.transform, "BEST", 13, MutedColor);
+            hud._bestText = UiFactory.CreateText("BestValue", bestBadge.transform, "0", 20, TextColor);
 
             var meterBg = UiFactory.CreateRoundedPanel("MeterBg", root, PanelColor);
             var meterBgElement = meterBg.gameObject.AddComponent<LayoutElement>();
@@ -88,24 +119,6 @@ namespace BlockMerge.Gameplay
             hud.StartCoroutine(hud.GlowPulseLoop());
 
             return hud;
-        }
-
-        /// <summary>A compact horizontal pill: small muted label on the left, bold value on
-        /// the right — not a tall stacked box, so it reads as a HUD chip rather than a panel.</summary>
-        private static void CreateStat(Transform parent, string label, out Text valueText)
-        {
-            var box = UiFactory.CreateRoundedPanel(label + "Box", parent, PanelColor);
-            var layout = box.gameObject.AddComponent<HorizontalLayoutGroup>();
-            layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.spacing = 6f;
-            layout.padding = new RectOffset(18, 18, 0, 0);
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = false;
-            layout.childForceExpandHeight = true;
-
-            UiFactory.CreateText(label + "Label", box.transform, label.ToUpperInvariant(), 15, MutedColor);
-            valueText = UiFactory.CreateText(label + "Value", box.transform, "0", 26, TextColor);
         }
 
         /// <summary>Instant, no-animation set — use for initial load / restart.</summary>

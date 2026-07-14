@@ -168,6 +168,39 @@ it — the biggest single note from the last screenshot ("stagnant board").
 > noise — both are just numbers I picked and easy to retune once you've
 > played with them.
 
+### Round 3: real depth, board movement, less generic HUD
+
+Feedback on the previous round: still didn't feel modern, wanted actual 3D
+depth, wanted the board to move, and the score/best boxes in the screenshot
+still looked like the pre-fix oversized ones (worth double-checking you're
+on the latest pull if they still look that way).
+
+- **Real elevation shadows**: filled cells, tray pieces, and the drag ghost
+  now sit on an actual shadow layer behind them — a genuine raised-card
+  look, not another flat tint or the earlier glossy mistake. Empty cells
+  stay flat (no shadow), so filled ones visibly pop above the board. The
+  drag ghost's shadow is bigger/stronger than a resting cell's, reading as
+  "floating higher" while it's in your hand.
+- **Board movement**: the whole grid now has a constant slow sway (a subtle
+  few degrees of rotation, always running) plus a reactive tilt toward
+  wherever you're dragging — the board visibly "leans" into what you're
+  doing rather than sitting static.
+- **Less generic HUD**: replaced the twin identical score/best boxes (which
+  reads as a generic template) with an asymmetric layout — score is the
+  hero stat (bold, no box, left-aligned), best is a small secondary badge
+  pinned to the right.
+
+> Same caveat as above: unverified, since there's no Editor here to look at
+> it in. The elevation shadows and board tilt are plain RectTransform
+> tricks (offset child rects, Z-axis rotation) rather than a real 3D
+> camera/render-mode change — lower risk, but also a ceiling on how "3D"
+> it can actually look. If this still doesn't read as three-dimensional
+> enough once you've seen it, the next real step up is switching the
+> Canvas to Screen Space - Camera with a perspective camera so the board
+> can have genuine perspective-correct tilt — that's a bigger, riskier
+> change worth doing deliberately rather than guessing into, so flagging it
+> now rather than jumping straight there.
+
 ## What's next
 
 1. Save a `Scenes/Main.unity` scene once the one-GameObject setup above is
