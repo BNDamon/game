@@ -16,11 +16,12 @@ with the data model before any UI/art/monetization work.
 Assets/
   _Project/
     Scripts/
-      Core/       Engine-agnostic C# game logic (this is what's implemented so far)
-      Gameplay/   MonoBehaviours: views, input, controller (not started yet)
-    Scenes/       (empty — no scene wired up yet)
+      Core/       Engine-agnostic C# game logic
+      Gameplay/   MonoBehaviours: views, input, controller — builds the whole
+                  screen procedurally at runtime, no scene file needed
+    Scenes/       (empty — see "Playing it" below for the one-GameObject setup)
     Prefabs/      (empty)
-    Art/          (empty — flat colored squares planned, no sprites yet)
+    Art/          (empty — flat colored squares only, no sprites yet)
   Tests/
     EditMode/     NUnit tests for Scripts/Core
 ```
@@ -29,8 +30,23 @@ Assets/
 
 `Scripts/Core` has **no UnityEngine dependency** (`noEngineReferences: true`
 in its asmdef) — it's plain C#, so it's fast to test and portable if the
-engine ever changes. `Scripts/Gameplay` (not started) will be the
-MonoBehaviour layer that renders `Core` state and forwards input into it.
+engine ever changes. `Scripts/Gameplay` is the MonoBehaviour layer: it renders
+`Core` state as flat colored UGUI panels (no art assets — a solid white 4×4
+texture tinted per-cell) and forwards clicks into `GameSession`. It's built
+entirely from code in `GameController.Awake()` — Canvas, HUD, grid, tray,
+power-up bar, game-over panel — rather than a hand-authored `.unity` scene
+file, which is risky to author correctly by hand outside the Editor.
+
+| Gameplay file | Responsibility |
+|---|---|
+| `UiFactory` | code-only helpers: solid-color sprite, panels, text, buttons, canvas, EventSystem |
+| `BlockColorPalette` | `BlockColor` enum → actual RGB (the prototype's `COLORS` array) |
+| `CellView` / `GridView` | one board cell; the 8×8 (or `Board.SizeValue`) grid of them |
+| `PieceTraySlotView` / `PieceTrayView` | one tray slot rendering a piece's shape; the 3-slot tray |
+| `HudView` | score/best boxes + charge meter bar |
+| `PowerUpBar` | bomb/line/color-wipe buttons, shown only when the meter is full |
+| `GameOverPanel` | full-screen overlay + restart |
+| `GameController` | builds the screen, owns the `GameSession`, wires clicks to it |
 
 | File | Responsibility | Prototype equivalent |
 |---|---|---|
@@ -63,12 +79,38 @@ tray refill, game-over detection, restart).
 > but not run through Unity's Test Runner in this environment (no Unity
 > Editor available here) — run them locally before relying on them.
 
+## Playing it
+
+There's no `.unity` scene file checked in yet, but the setup is one step:
+
+1. **File → New Scene** (or use the default empty scene Unity opens with).
+2. In the Hierarchy, **right-click → Create Empty**, name it anything
+   (e.g. `Game`).
+3. Add the **Game Controller** component to it (`Assets/_Project/Scripts/Gameplay/GameController.cs`).
+4. Press **Play**. `GameController.Awake()` builds the Canvas, HUD, 8×8
+   grid, piece tray, power-up bar, and game-over overlay at runtime and
+   starts a `GameSession`.
+
+Controls mirror the prototype: tap a tray piece to select it (highlights
+yellow), tap a board cell to place it. When the charge meter fills, three
+power-up buttons appear — tap one, then tap a board cell to apply it.
+
+> This view/input layer was written and reasoned through carefully but not
+> visually verified — there's no Unity Editor in the environment it was
+> written in, so treat the first Play session as a check for layout/sizing
+> issues (e.g. the grid or tray not filling the screen as expected on your
+> aspect ratio) rather than an already-polished screen. The interaction
+> logic (placement, clears, merges, power-ups, game over) is the same code
+> the EditMode tests already exercise, so that part should be solid; it's
+> purely the handwritten UGUI layout code that's unverified.
+
 ## What's next
 
-1. `Scripts/Gameplay`: a `GridView` that renders `Board` state as flat
-   colored squares (no sprites), a piece tray view, and drag/tap input
-   wired to `GameSession`.
-2. A `Scenes/Main.unity` scene wiring it together.
-3. Once the mechanic is playable end-to-end in Unity: juice (clear/merge
-   VFX, meter fill animation), then monetization (rewarded video,
-   interstitial, IAP) and art pass.
+1. Save a `Scenes/Main.unity` scene once the one-GameObject setup above is
+   confirmed working, so it's not manual every time.
+2. Juice: clear/merge VFX (the prototype's `.clearing` / `.merging` CSS
+   animations — a scale+fade tween and a scale+brighten tween are the
+   direct equivalents), meter fill animation, drag-to-place instead of
+   tap-to-select if that feels better once playable.
+3. Monetization (rewarded video, interstitial, IAP) and an actual art pass,
+   once the mechanic itself feels right in Unity.

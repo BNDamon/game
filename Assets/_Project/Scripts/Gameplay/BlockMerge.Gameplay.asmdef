@@ -1,0 +1,16 @@
+{
+    "name": "BlockMerge.Gameplay",
+    "rootNamespace": "BlockMerge.Gameplay",
+    "references": [
+        "BlockMerge.Core",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": []
+}
