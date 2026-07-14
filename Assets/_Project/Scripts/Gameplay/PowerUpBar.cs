@@ -18,6 +18,8 @@ namespace BlockMerge.Gameplay
             var layout = rect.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = 10f;
             layout.childAlignment = TextAnchor.MiddleCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
             var layoutElement = rect.gameObject.AddComponent<LayoutElement>();
             layoutElement.preferredHeight = 90f;
 

@@ -18,7 +18,12 @@ namespace BlockMerge.Gameplay
         public static HudView Create(Transform parent)
         {
             var root = UiFactory.CreateRect("Hud", parent);
-            root.gameObject.AddComponent<VerticalLayoutGroup>().spacing = 10f;
+            var rootLayout = root.gameObject.AddComponent<VerticalLayoutGroup>();
+            rootLayout.spacing = 10f;
+            rootLayout.childControlWidth = true;
+            rootLayout.childControlHeight = true;
+            rootLayout.childForceExpandWidth = true;
+            rootLayout.childForceExpandHeight = false;
             var rootLayoutElement = root.gameObject.AddComponent<LayoutElement>();
             rootLayoutElement.preferredHeight = 170f;
 
@@ -27,7 +32,10 @@ namespace BlockMerge.Gameplay
             var scoreRow = UiFactory.CreateRect("ScoreRow", root);
             var scoreLayout = scoreRow.gameObject.AddComponent<HorizontalLayoutGroup>();
             scoreLayout.spacing = 12f;
+            scoreLayout.childControlWidth = true;
+            scoreLayout.childControlHeight = true;
             scoreLayout.childForceExpandWidth = true;
+            scoreLayout.childForceExpandHeight = true;
             var scoreRowElement = scoreRow.gameObject.AddComponent<LayoutElement>();
             scoreRowElement.preferredHeight = 90f;
 
@@ -62,6 +70,10 @@ namespace BlockMerge.Gameplay
             var layout = box.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.spacing = 4f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
 
             UiFactory.CreateText(label + "Label", box.transform, label.ToUpperInvariant(), 20, MutedColor);
             valueText = UiFactory.CreateText(label + "Value", box.transform, "0", 36, TextColor);

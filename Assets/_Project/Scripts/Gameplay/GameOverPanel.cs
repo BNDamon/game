@@ -32,6 +32,10 @@ namespace BlockMerge.Gameplay
             var layout = rect.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleCenter;
             layout.spacing = 16f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = false;
+            layout.childForceExpandHeight = false;
 
             UiFactory.CreateText("Title", rect, "Game Over", 48, Color.white);
             panel._summaryText = UiFactory.CreateText("Summary", rect, "", 28, SummaryColor);
