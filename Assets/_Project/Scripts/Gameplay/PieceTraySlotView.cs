@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using BlockMerge.Core;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -10,6 +11,7 @@ namespace BlockMerge.Gameplay
     {
         private static readonly Color Idle = new Color32(0x1e, 0x21, 0x29, 0xff);
         private static readonly Color Used = new Color32(0x1e, 0x21, 0x29, 0x50);
+        private static readonly Color InvalidFlash = new Color32(0xff, 0x55, 0x55, 0xff);
 
         private const float SlotSize = 220f;
         private const float MiniCell = 26f;
@@ -112,6 +114,33 @@ namespace BlockMerge.Gameplay
         {
             if (_currentPiece == null) return;
             DragEnded?.Invoke(Index, eventData);
+        }
+
+        /// <summary>Brief red flash + shake so a failed drop is unmistakable, not just a
+        /// silent snap-back.</summary>
+        public void PlayInvalidDropFeedback()
+        {
+            StopCoroutine(nameof(InvalidDropRoutine));
+            StartCoroutine(nameof(InvalidDropRoutine));
+        }
+
+        private IEnumerator InvalidDropRoutine()
+        {
+            const float duration = 0.28f;
+            var baseColor = _background.color;
+            var baseAnchoredPos = ((RectTransform)transform).anchoredPosition;
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float p = t / duration;
+                _background.color = Color.Lerp(InvalidFlash, baseColor, p);
+                float shake = Mathf.Sin(p * Mathf.PI * 6f) * (1f - p) * 8f;
+                ((RectTransform)transform).anchoredPosition = baseAnchoredPos + new Vector2(shake, 0f);
+                yield return null;
+            }
+            _background.color = baseColor;
+            ((RectTransform)transform).anchoredPosition = baseAnchoredPos;
         }
     }
 }

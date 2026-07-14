@@ -121,7 +121,11 @@ namespace BlockMerge.Gameplay
             _draggingIndex = -1;
             _draggingPiece = null;
 
-            if (!placed) _trayView.Render(_session.Tray, null);
+            if (!placed)
+            {
+                _trayView.Render(_session.Tray, null);
+                _trayView.PlayInvalidDropFeedback(index);
+            }
         }
 
         private void CompletePlacement(int index, GridCoord anchor)

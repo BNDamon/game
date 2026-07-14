@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,7 @@ namespace BlockMerge.Gameplay
         public event Action RestartClicked;
 
         private Text _summaryText;
+        private CanvasGroup _canvasGroup;
 
         public static GameOverPanel Create(Transform parent)
         {
@@ -28,6 +30,7 @@ namespace BlockMerge.Gameplay
             background.color = BackgroundColor;
 
             var panel = rect.gameObject.AddComponent<GameOverPanel>();
+            panel._canvasGroup = rect.gameObject.AddComponent<CanvasGroup>();
 
             var layout = rect.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.childAlignment = TextAnchor.MiddleCenter;
@@ -54,8 +57,29 @@ namespace BlockMerge.Gameplay
         {
             _summaryText.text = $"Score: {score}  •  Best: {best}";
             gameObject.SetActive(true);
+            StopAllCoroutines();
+            StartCoroutine(RevealRoutine());
         }
 
         public void Hide() => gameObject.SetActive(false);
+
+        private IEnumerator RevealRoutine()
+        {
+            const float duration = 0.3f;
+            transform.localScale = Vector3.one * 0.85f;
+            _canvasGroup.alpha = 0f;
+            float t = 0f;
+            while (t < duration)
+            {
+                t += Time.deltaTime;
+                float p = Mathf.Clamp01(t / duration);
+                float eased = 1f - Mathf.Pow(1f - p, 3f); // ease-out cubic
+                transform.localScale = Vector3.one * Mathf.Lerp(0.85f, 1f, eased);
+                _canvasGroup.alpha = eased;
+                yield return null;
+            }
+            transform.localScale = Vector3.one;
+            _canvasGroup.alpha = 1f;
+        }
     }
 }

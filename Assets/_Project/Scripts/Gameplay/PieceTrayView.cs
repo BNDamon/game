@@ -47,5 +47,7 @@ namespace BlockMerge.Gameplay
             for (int i = 0; i < _slots.Length; i++)
                 _slots[i].Render(tray[i], draggingIndex.HasValue && draggingIndex.Value == i);
         }
+
+        public void PlayInvalidDropFeedback(int index) => _slots[index].PlayInvalidDropFeedback();
     }
 }
