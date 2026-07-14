@@ -11,7 +11,8 @@ namespace BlockMerge.Gameplay
         private static readonly Color EmptyColor = new Color32(0x22, 0x25, 0x2d, 0xff);
         private static readonly Color PreviewValidColor = new Color32(0xf4, 0xf6, 0xf8, 0xff);
         private static readonly Color PreviewInvalidColor = new Color32(0xff, 0x55, 0x55, 0xff);
-        private const float ShadowAlpha = 0.35f;
+        private const float ShadowAlpha = 1f;
+        private const float ShadowDarkenFactor = 0.5f;
 
         /// <summary>Tap-to-target for armed power-ups. Piece placement is drag-based (see
         /// PieceTraySlotView) and doesn't use this.</summary>
@@ -58,11 +59,12 @@ namespace BlockMerge.Gameplay
             RestartBreathing();
         }
 
-        /// <summary>Filled cells cast a soft shadow and read as a raised card; empty cells
-        /// are flat (no shadow) — a "socket" the board sits in rather than something raised.</summary>
+        /// <summary>Filled cells show a darker same-hue "side" beneath the fill, reading as
+        /// an actual extruded cube face; empty cells are flat (no side) — a "socket" the
+        /// board sits in rather than something raised.</summary>
         private void UpdateShadow()
         {
-            var c = _shadowImage.color;
+            var c = UiFactory.Darken(_currentColor, ShadowDarkenFactor);
             c.a = _filled ? ShadowAlpha : 0f;
             _shadowImage.color = c;
         }

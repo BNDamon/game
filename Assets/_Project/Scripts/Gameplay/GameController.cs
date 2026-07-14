@@ -21,6 +21,7 @@ namespace BlockMerge.Gameplay
         private const float DragLiftOffset = 220f;
         private const float GhostCellSize = 96f;
         private const float GhostSpacing = 4f;
+        private const float GhostExtrusionDepth = 14f;
 
         private GameSession _session;
         private GridView _gridView;
@@ -275,18 +276,15 @@ namespace BlockMerge.Gameplay
 
             foreach (var offset in piece.Cells)
             {
-                var cellRect = UiFactory.CreateElevatedCell("GhostCell", ghost, color, out var shadow, out var fill);
+                // A deeper extrusion than a resting cell's — it reads as floating higher
+                // above the board while it's being dragged.
+                var cellRect = UiFactory.CreateElevatedCell("GhostCell", ghost, color, GhostExtrusionDepth, out var shadow, out var fill);
                 cellRect.sizeDelta = new Vector2(GhostCellSize, GhostCellSize);
                 cellRect.anchorMin = cellRect.anchorMax = new Vector2(0.5f, 0.5f);
                 fill.raycastTarget = false;
 
-                // A bigger, stronger shadow than a resting cell's — it reads as floating
-                // higher above the board while it's being dragged.
-                var shadowRect = shadow.rectTransform;
-                shadowRect.offsetMin = new Vector2(4f, -14f);
-                shadowRect.offsetMax = new Vector2(4f, -4f);
                 var shadowColor = shadow.color;
-                shadowColor.a = 0.5f;
+                shadowColor.a = 1f;
                 shadow.color = shadowColor;
 
                 float x = -width / 2f + GhostCellSize / 2f + offset.Col * (GhostCellSize + GhostSpacing);

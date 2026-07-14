@@ -153,23 +153,38 @@ namespace BlockMerge.Gameplay
             return image;
         }
 
+        /// <summary>Multiplies a color's RGB toward black, leaving alpha untouched — used to
+        /// derive a block's darker "side" shade from its own top-face color, so the extrusion
+        /// reads as the same cube rather than a generic drop shadow.</summary>
+        public static Color Darken(Color color, float factor) =>
+            new Color(color.r * factor, color.g * factor, color.b * factor, color.a);
+
         /// <summary>An empty container holding two stretched rounded-rect children — a
-        /// "Shadow" behind and a "Fill" in front — so a filled cell can read as a raised 3D
-        /// card (real elevation, not a flat tint). The shadow starts fully transparent;
-        /// callers toggle its alpha to switch between "raised" (filled) and "flat" (empty)
-        /// looks. A child can't render behind its own parent's Graphic in Unity's UI draw
-        /// order, which is why this needs a plain container rather than the fill living
-        /// directly on the returned rect.</summary>
+        /// "Shadow" behind and a "Fill" in front — so a filled cell reads as an actual 3D
+        /// cube: a bright top face plus a darker same-hue "side" peeking out directly beneath
+        /// it, extruded by a fixed pixel depth (no horizontal offset, so it reads as a side
+        /// face rather than a light-source drop shadow). The side starts fully transparent;
+        /// callers toggle its alpha (and refresh its color when the fill color changes) to
+        /// switch between "raised" (filled) and "flat" (empty) looks. A child can't render
+        /// behind its own parent's Graphic in Unity's UI draw order, which is why this needs
+        /// a plain container rather than the fill living directly on the returned rect.</summary>
         public static RectTransform CreateElevatedCell(string name, Transform parent, Color fillColor, out Image shadow, out Image fill)
+        {
+            return CreateElevatedCell(name, parent, fillColor, 8f, out shadow, out fill);
+        }
+
+        public static RectTransform CreateElevatedCell(string name, Transform parent, Color fillColor, float extrusionDepth, out Image shadow, out Image fill)
         {
             var container = CreateRect(name, parent);
 
-            shadow = CreateRoundedPanel("Shadow", container, new Color(0f, 0f, 0f, 0f));
+            var shadowColor = Darken(fillColor, 0.5f);
+            shadowColor.a = 0f;
+            shadow = CreateRoundedPanel("Shadow", container, shadowColor);
             var shadowRect = shadow.rectTransform;
             shadowRect.anchorMin = Vector2.zero;
             shadowRect.anchorMax = Vector2.one;
-            shadowRect.offsetMin = new Vector2(2f, -5f);
-            shadowRect.offsetMax = new Vector2(2f, -1f);
+            shadowRect.offsetMin = new Vector2(0f, -extrusionDepth);
+            shadowRect.offsetMax = new Vector2(0f, -extrusionDepth);
             shadow.raycastTarget = false;
 
             fill = CreateRoundedPanel("Fill", container, fillColor);

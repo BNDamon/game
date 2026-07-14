@@ -16,6 +16,7 @@ namespace BlockMerge.Gameplay
         private const float SlotSize = 220f;
         private const float MiniCell = 26f;
         private const float MiniSpacing = 2f;
+        private const float MiniCellExtrusionDepth = 4f;
 
         public event Action<int, PointerEventData> DragStarted;
         public event Action<PointerEventData> DragMoved;
@@ -85,12 +86,12 @@ namespace BlockMerge.Gameplay
 
             foreach (var cellCoord in piece.Cells)
             {
-                var cellRect = UiFactory.CreateElevatedCell("MiniCell", _shapeContainer, color, out var shadow, out var fill);
+                var cellRect = UiFactory.CreateElevatedCell("MiniCell", _shapeContainer, color, MiniCellExtrusionDepth, out var shadow, out var fill);
                 cellRect.sizeDelta = new Vector2(MiniCell, MiniCell);
                 cellRect.anchorMin = cellRect.anchorMax = new Vector2(0.5f, 0.5f);
                 fill.raycastTarget = false;
                 var shadowColor = shadow.color;
-                shadowColor.a = 0.35f; // tray pieces are always "filled", so always cast a shadow
+                shadowColor.a = 1f; // tray pieces are always "filled", so always show the side face
                 shadow.color = shadowColor;
 
                 float x = -shapeWidth / 2f + MiniCell / 2f + cellCoord.Col * (MiniCell + MiniSpacing);

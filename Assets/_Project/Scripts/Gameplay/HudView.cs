@@ -65,22 +65,23 @@ namespace BlockMerge.Gameplay
             hud._scoreText = UiFactory.CreateText("ScoreValue", scoreHero, "0", 42, TextColor, TextAnchor.MiddleLeft);
             hud._scoreText.fontStyle = FontStyle.Bold;
 
-            // Best is secondary: a small fixed-width badge pinned to the right.
-            var bestBadge = UiFactory.CreateRoundedPanel("BestBadge", scoreRow, PanelColor);
-            var bestBadgeLayout = bestBadge.gameObject.AddComponent<HorizontalLayoutGroup>();
-            bestBadgeLayout.childAlignment = TextAnchor.MiddleCenter;
-            bestBadgeLayout.spacing = 6f;
-            bestBadgeLayout.padding = new RectOffset(14, 14, 0, 0);
+            // Best is secondary: plain floating text pinned to the right, no panel — matches
+            // ScoreHero's boxless treatment so nothing in the HUD reads as "a box" anymore.
+            var bestBadge = UiFactory.CreateRect("BestBadge", scoreRow);
+            var bestBadgeLayout = bestBadge.gameObject.AddComponent<VerticalLayoutGroup>();
+            bestBadgeLayout.childAlignment = TextAnchor.MiddleRight;
+            bestBadgeLayout.spacing = -2f;
             bestBadgeLayout.childControlWidth = true;
             bestBadgeLayout.childControlHeight = true;
             bestBadgeLayout.childForceExpandWidth = false;
-            bestBadgeLayout.childForceExpandHeight = true;
+            bestBadgeLayout.childForceExpandHeight = false;
             var bestBadgeElement = bestBadge.gameObject.AddComponent<LayoutElement>();
             bestBadgeElement.preferredWidth = 150f;
             bestBadgeElement.preferredHeight = 60f;
 
-            UiFactory.CreateText("BestLabel", bestBadge.transform, "BEST", 13, MutedColor);
-            hud._bestText = UiFactory.CreateText("BestValue", bestBadge.transform, "0", 20, TextColor);
+            UiFactory.CreateText("BestLabel", bestBadge, "BEST", 14, MutedColor, TextAnchor.MiddleRight);
+            hud._bestText = UiFactory.CreateText("BestValue", bestBadge, "0", 28, TextColor, TextAnchor.MiddleRight);
+            hud._bestText.fontStyle = FontStyle.Bold;
 
             var meterBg = UiFactory.CreateRoundedPanel("MeterBg", root, PanelColor);
             var meterBgElement = meterBg.gameObject.AddComponent<LayoutElement>();

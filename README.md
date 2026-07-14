@@ -227,6 +227,35 @@ the shrinking window was picked.
   it's felt rather than watched — happy to add a visible indicator if you
   want the pressure to be more explicit once you've played with it.
 
+### Round 5: blocks that actually read as 3D, and a fully box-free HUD
+
+Feedback: the score/best still showed a visible box around Best in the
+screenshot, and the 3D read wasn't strong enough — asked for the blocks and
+board to genuinely look three-dimensional, and for the HUD to drop boxes
+entirely in favor of plain text.
+
+- **Blocks are now real colored cubes, not black-shadowed cards.** The
+  "shadow" behind every filled cell, tray mini-cell, and drag-ghost cell is
+  no longer a translucent black smudge — it's a darker shade of the block's
+  own color, extruded straight down (no diagonal offset) by a fixed pixel
+  depth, so it reads as the side face of a cube rather than a drop shadow.
+  Board cells extrude 8px, tray mini-cells 4px (scaled to their smaller
+  size), and the drag ghost extrudes 14px so it visibly "floats higher"
+  than a resting cell. `UiFactory.CreateElevatedCell` derives the side
+  shade automatically (`Darken`, RGB × 0.5) from whatever fill color it's
+  given, so every block color gets a matching, correctly-shaded side for
+  free — no per-color art needed.
+- **HUD is fully box-free.** The Best badge was the last panel left in the
+  HUD (Score already had none) — it's now plain floating text, right-aligned,
+  matching Score's boxless treatment. Nothing in the HUD sits on a rounded
+  panel anymore; it's just text over the background.
+
+> Unverified like everything else here (no Unity Editor in this
+> environment) — worth specifically checking that the cube extrusion depth
+> feels right at actual on-screen size (board cells vs. the much smaller
+> tray mini-cells) and doesn't look too subtle or too chunky, since that's
+> a judgment call easiest to make by eye.
+
 ## What's next
 
 1. Save a `Scenes/Main.unity` scene once the one-GameObject setup above is
