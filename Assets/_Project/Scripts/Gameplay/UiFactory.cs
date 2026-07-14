@@ -74,7 +74,7 @@ namespace BlockMerge.Gameplay
             var rect = CreateRect(name, parent);
             var text = rect.gameObject.AddComponent<Text>();
             text.text = content;
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.fontSize = fontSize;
             text.color = color;
             text.alignment = anchor;
