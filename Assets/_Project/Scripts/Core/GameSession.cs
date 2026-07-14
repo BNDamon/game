@@ -17,6 +17,7 @@ namespace BlockMerge.Core
 
         public Board Board { get; }
         public ChargeMeter Meter { get; } = new ChargeMeter();
+        public ComboTracker Combo { get; } = new ComboTracker();
 
         /// <summary>Null slots are pieces already used this round. Tray refills when all
         /// three are null — mirrors tray.every(p => p === null) in the prototype. Array
@@ -54,6 +55,11 @@ namespace BlockMerge.Core
             return piece != null && Board.CanPlace(piece, origin);
         }
 
+        /// <summary>Advances the combo decay clock. Call every frame (or on whatever cadence
+        /// the host loop ticks) with real elapsed time — Core has no engine dependency, so it
+        /// can't read a clock itself.</summary>
+        public void Tick(float deltaTimeSeconds) => Combo.Tick(deltaTimeSeconds);
+
         public PlacementOutcome PlacePiece(int trayIndex, GridCoord origin)
         {
             if (IsGameOver) return PlacementOutcome.Rejected;
@@ -68,9 +74,13 @@ namespace BlockMerge.Core
             if (Tray.All(p => p == null)) RefillTray();
 
             var lineClear = _lineClearResolver.Resolve(Board);
+            int comboCount = 0;
+            int scoreAwarded = 0;
             if (lineClear.AnyLinesCleared)
             {
-                Score += lineClear.LineBonus + lineClear.MergeBonus;
+                comboCount = Combo.RegisterClear();
+                scoreAwarded = (int)Math.Round((lineClear.LineBonus + lineClear.MergeBonus) * Combo.CurrentMultiplier);
+                Score += scoreAwarded;
                 Meter.Add(lineClear.MergeBonus);
                 _lineClearResolver.Apply(Board, lineClear);
             }
@@ -79,7 +89,7 @@ namespace BlockMerge.Core
             IsGameOver = CheckGameOver();
             if (IsGameOver) Best = Math.Max(Best, Score);
 
-            return new PlacementOutcome(true, placedCells, lineClear, PowerUpAvailable, IsGameOver);
+            return new PlacementOutcome(true, placedCells, lineClear, PowerUpAvailable, IsGameOver, comboCount, scoreAwarded);
         }
 
         public IReadOnlyList<GridCoord> UsePowerUp(PowerUpType type, GridCoord target)
@@ -108,6 +118,7 @@ namespace BlockMerge.Core
             Board.ClearAll();
             Score = 0;
             Meter.Reset();
+            Combo.Reset();
             PowerUpAvailable = false;
             IsGameOver = false;
             RefillTray();

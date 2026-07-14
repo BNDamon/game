@@ -85,6 +85,67 @@ namespace BlockMerge.Core.Tests
         }
 
         [Test]
+        public void PlacePiece_ChainedClears_AwardsHigherScoreViaCombo()
+        {
+            var session = NewDeterministicSession(4);
+
+            session.Tray[0] = SingleCell(BlockColor.Red);
+            session.PlacePiece(0, new GridCoord(0, 0));
+            session.Tray[1] = SingleCell(BlockColor.Cyan);
+            session.PlacePiece(1, new GridCoord(0, 1));
+            session.Tray[2] = SingleCell(BlockColor.Red);
+            session.PlacePiece(2, new GridCoord(0, 2));
+            session.Tray[0] = SingleCell(BlockColor.Cyan);
+            var outcome1 = session.PlacePiece(0, new GridCoord(0, 3)); // clears row 0
+
+            Assert.IsTrue(outcome1.LineClear.AnyLinesCleared);
+            Assert.AreEqual(1, outcome1.ComboCount);
+
+            // No Tick() call between clears — mirrors two clears landing back-to-back within
+            // the same instant, well inside the combo window.
+            session.Tray[1] = SingleCell(BlockColor.Red);
+            session.PlacePiece(1, new GridCoord(1, 0));
+            session.Tray[2] = SingleCell(BlockColor.Cyan);
+            session.PlacePiece(2, new GridCoord(1, 1));
+            session.Tray[0] = SingleCell(BlockColor.Red);
+            session.PlacePiece(0, new GridCoord(1, 2));
+            session.Tray[1] = SingleCell(BlockColor.Cyan);
+            var outcome2 = session.PlacePiece(1, new GridCoord(1, 3)); // clears row 1
+
+            Assert.IsTrue(outcome2.LineClear.AnyLinesCleared);
+            Assert.AreEqual(2, outcome2.ComboCount);
+            Assert.Greater(outcome2.ScoreAwarded, outcome1.ScoreAwarded);
+        }
+
+        [Test]
+        public void PlacePiece_ClearAfterComboWindowExpires_RestartsComboAtOne()
+        {
+            var session = NewDeterministicSession(4);
+
+            session.Tray[0] = SingleCell(BlockColor.Red);
+            session.PlacePiece(0, new GridCoord(0, 0));
+            session.Tray[1] = SingleCell(BlockColor.Cyan);
+            session.PlacePiece(1, new GridCoord(0, 1));
+            session.Tray[2] = SingleCell(BlockColor.Red);
+            session.PlacePiece(2, new GridCoord(0, 2));
+            session.Tray[0] = SingleCell(BlockColor.Cyan);
+            session.PlacePiece(0, new GridCoord(0, 3)); // first clear, combo 1
+
+            session.Tick(ComboTracker.ComboWindowSeconds + 0.5f); // let the combo window lapse
+
+            session.Tray[1] = SingleCell(BlockColor.Red);
+            session.PlacePiece(1, new GridCoord(1, 0));
+            session.Tray[2] = SingleCell(BlockColor.Cyan);
+            session.PlacePiece(2, new GridCoord(1, 1));
+            session.Tray[0] = SingleCell(BlockColor.Red);
+            session.PlacePiece(0, new GridCoord(1, 2));
+            session.Tray[1] = SingleCell(BlockColor.Cyan);
+            var outcome = session.PlacePiece(1, new GridCoord(1, 3));
+
+            Assert.AreEqual(1, outcome.ComboCount);
+        }
+
+        [Test]
         public void UsePowerUp_IsNoOp_WhenMeterNotFull()
         {
             var session = NewDeterministicSession();
