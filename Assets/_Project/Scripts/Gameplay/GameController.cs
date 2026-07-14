@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using BlockMerge.Core;
 using UnityEngine;
@@ -33,9 +32,6 @@ namespace BlockMerge.Gameplay
         private Image _background;
 
         private Transform _canvasTransform;
-        private RectTransform _gridRect;
-        private float _idleSwayAngle;
-        private float _dragTiltAngle;
         private RectTransform _dragGhost;
         private int _dragGhostBoundsRows;
         private int _dragGhostBoundsCols;
@@ -75,7 +71,6 @@ namespace BlockMerge.Gameplay
 
             _hudView = HudView.Create(root);
             _gridView = GridView.Create(root, _session.Board.SizeValue, 968f);
-            _gridRect = (RectTransform)_gridView.transform;
             _trayView = PieceTrayView.Create(root, GameSession.TraySize);
             _powerUpBar = PowerUpBar.Create(root);
 
@@ -91,42 +86,11 @@ namespace BlockMerge.Gameplay
             _gameOverPanel.RestartClicked += OnRestartClicked;
 
             RenderAllImmediate();
-            StartCoroutine(IdleSwayLoop());
         }
 
         private void Update()
         {
             _session.Tick(Time.deltaTime);
-        }
-
-        /// <summary>Keeps the board from ever reading as a static image: a slow, gentle sway
-        /// runs constantly, and while dragging, a reactive tilt toward the drag position
-        /// blends in on top of it — the board "leans" toward what you're doing.</summary>
-        private IEnumerator IdleSwayLoop()
-        {
-            while (true)
-            {
-                _idleSwayAngle = Mathf.Sin(Time.time * 0.35f) * 1.4f;
-                if (_draggingPiece == null)
-                    _dragTiltAngle = Mathf.Lerp(_dragTiltAngle, 0f, Time.deltaTime * 5f);
-                ApplyGridRotation();
-                yield return null;
-            }
-        }
-
-        private void ApplyGridRotation()
-        {
-            _gridRect.localRotation = Quaternion.Euler(0f, 0f, _idleSwayAngle + _dragTiltAngle);
-        }
-
-        private void UpdateDragTilt()
-        {
-            if (_dragGhost == null) return;
-            var canvasRect = (RectTransform)_canvasTransform;
-            float halfWidth = canvasRect.rect.width / 2f;
-            float normalized = halfWidth > 0f ? Mathf.Clamp(_dragGhost.anchoredPosition.x / halfWidth, -1f, 1f) : 0f;
-            _dragTiltAngle = Mathf.Lerp(_dragTiltAngle, normalized * -5f, 0.3f);
-            ApplyGridRotation();
         }
 
         private void OnTrayDragStarted(int index, PointerEventData eventData)
@@ -141,7 +105,6 @@ namespace BlockMerge.Gameplay
             CreateDragGhost(piece);
             UpdateGhostPosition(eventData);
             UpdatePreview();
-            UpdateDragTilt();
         }
 
         private void OnTrayDragMoved(PointerEventData eventData)
@@ -149,7 +112,6 @@ namespace BlockMerge.Gameplay
             if (_draggingPiece == null) return;
             UpdateGhostPosition(eventData);
             UpdatePreview();
-            UpdateDragTilt();
         }
 
         private void OnTrayDragEnded(int index, PointerEventData eventData)

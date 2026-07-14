@@ -59,6 +59,7 @@ namespace BlockMerge.Gameplay
             scoreHeroLayout.childForceExpandHeight = false;
             var scoreHeroElement = scoreHero.gameObject.AddComponent<LayoutElement>();
             scoreHeroElement.flexibleWidth = 1f;
+            scoreHeroElement.preferredHeight = 60f;
 
             UiFactory.CreateText("ScoreLabel", scoreHero, "SCORE", 14, MutedColor, TextAnchor.MiddleLeft);
             hud._scoreText = UiFactory.CreateText("ScoreValue", scoreHero, "0", 42, TextColor, TextAnchor.MiddleLeft);
@@ -76,6 +77,7 @@ namespace BlockMerge.Gameplay
             bestBadgeLayout.childForceExpandHeight = true;
             var bestBadgeElement = bestBadge.gameObject.AddComponent<LayoutElement>();
             bestBadgeElement.preferredWidth = 150f;
+            bestBadgeElement.preferredHeight = 60f;
 
             UiFactory.CreateText("BestLabel", bestBadge.transform, "BEST", 13, MutedColor);
             hud._bestText = UiFactory.CreateText("BestValue", bestBadge.transform, "0", 20, TextColor);
